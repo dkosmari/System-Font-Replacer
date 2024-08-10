@@ -5,6 +5,7 @@ DISTCLEANFILES = $(AMINCLUDE)
 EXTRA_DIST = \
 	bootstrap \
 	COPYING \
+	merge-fonts.py \
 	README.md
 
 
