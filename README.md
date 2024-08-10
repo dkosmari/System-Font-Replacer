@@ -28,8 +28,8 @@ to `U+E099`), to show symbols of gamepad buttons, sticks, etc. If the replacemen
 doesn't have the correct symbols in that block, text might be rendered incorrectly.
 
 To get correct text rendering you have to edit the new font, to add the correct symbols to
-that area. In this repository you can find a Python script, that uses `fontforge` to do
-that automatically.
+that area. In this repository you can find a Python script, that uses
+[FontForge](https://fontforge.org/) to do that automatically.
 
 Example usage:
 
