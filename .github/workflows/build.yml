@@ -1,0 +1,40 @@
+name: Build Binary
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build-plugin:
+    runs-on: ubuntu-latest
+    name: Build plugin
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Docker
+      run: docker build --tag plugin-builder-image .
+
+    - name: Build
+      uses: addnab/docker-run-action@v3
+      with:
+        image: plugin-builder-image
+        options: --name plugin-builder-container
+        run: |
+          ./bootstrap
+          ./configure --host=powerpc-eabi CXXFLAGS="-O2 -ffunction-sections -fipa-pta"
+          make
+
+    - name: Copy from container to host
+      uses: tj-actions/docker-cp@v2
+      with:
+        container: plugin-builder-container
+        source: /project/system-font-replacer.wps
+        destination: system-font-replacer.wps
+
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: system-font-replacer.wps
+        path: "*.wps"
+        if-no-files-found: error
