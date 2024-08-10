@@ -42,7 +42,7 @@ that area. In this repository you can find a Python script, that uses
 
    or
 
-       fontforge  merge-fonts.py myfont.ttf  path/to/original/CafeStd.ttf  CafeStd.ttf
+       fontforge  merge-fonts.py  myfont.ttf  path/to/original/CafeStd.ttf  CafeStd.ttf
 
    Note: the order is important, the first font has priority, the second font is only used
    to fill the missing symbols (except for the PUA block, it is always taken from the
