@@ -15,8 +15,8 @@ The plugin looks for replacement fonts in `sd:/wiiu/fonts/` with specific names:
 
   - `CafeTw.ttf`: replaces the Traditional Chinese font.
 
-If any of these files is found, it's loaded instead of the equivalent system font;
-otherwise, the system font is loaded.
+If any of these files is found, it will be loaded in place of the equivalent system font;
+otherwise, the original system font will be loaded.
 
 **No system file is modified by this plugin. All changes are done in RAM only.**
 
@@ -31,16 +31,25 @@ To get correct text rendering you have to edit the new font, to add the correct 
 that area. In this repository you can find a Python script, that uses
 [FontForge](https://fontforge.org/) to do that automatically.
 
-Example usage:
+1. Start by getting a copy of the original system fonts on your Wii U, from
+   `/storage_mlc/sys/title/0005001b/10042400/content` using
+   [ftpiiu](https://github.com/wiiu-env/ftpiiu_plugin).
 
-    ./merge-fonts.py myfont.ttf path/to/original/CafeStd.ttf CafeStd.ttf
+2. Assuming the font you want to use on your Wii U is called `myfont.ttf`, and you want to
+   replace `CafeStd.ttf`, you can execute the script like this:
 
-or
+       ./merge-fonts.py  myfont.ttf  path/to/original/CafeStd.ttf  CafeStd.ttf
 
-    fontforge merge-fonts.py myfont.ttf path/to/original/CafeStd.ttf CafeStd.ttf
+   or
 
-The resulting `CafeStd.ttf` is now ready to be placed on the SD card, and it will contain
-all the PUA symbols the Wii U software expects.
+       fontforge  merge-fonts.py myfont.ttf  path/to/original/CafeStd.ttf  CafeStd.ttf
 
-**Be mindful of copyright restrictions.** It's better to not distribute merged fonts
-unless you're sure you have the rights to do so.
+   Note: the order is important, the first font has priority, the second font is only used
+   to fill the missing symbols (except for the PUA block, it is always taken from the
+   second font.) The third font is the name of the output file.
+
+3. Copy the generated `CafeStd.ttf` to your SD card, into `sd:/wiiu/fonts/`.
+
+
+**Be aware of copyright restrictions.** It's better to not distribute merged fonts, unless
+you're sure the font's license permits modified copies to be distributed.
