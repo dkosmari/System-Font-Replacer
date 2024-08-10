@@ -20,6 +20,7 @@ LIBS = $(DEVKITPRO_LIBS)
 
 
 WPS_FILE = system-font-replacer.wps
+CLEANFILES = $(WPS_FILE)
 
 noinst_PROGRAMS = system-font-replacer.elf
 
