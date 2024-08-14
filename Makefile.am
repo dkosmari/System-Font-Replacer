@@ -2,6 +2,9 @@
 DISTCLEANFILES = $(AMINCLUDE)
 
 
+SUBDIRS = external/libwupsxx
+
+
 EXTRA_DIST = \
 	bootstrap \
 	COPYING \

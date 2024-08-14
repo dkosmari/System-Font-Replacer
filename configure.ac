@@ -23,3 +23,5 @@ AC_LANG([C++])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
+
+AC_CONFIG_SUBDIRS([external/libwupsxx])
