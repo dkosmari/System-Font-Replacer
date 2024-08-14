@@ -141,19 +141,23 @@ menu_open(WUPSConfigCategoryHandle root_handle)
 
         root.add(wups::config::file_item::create(cfg::labels::path_std,
                                                  cfg::path_std,
-                                                 cfg::defaults::path_std));
+                                                 cfg::defaults::path_std,
+                                                 40));
 
         root.add(wups::config::file_item::create(cfg::labels::path_cn,
                                                  cfg::path_cn,
-                                                 cfg::defaults::path_cn));
+                                                 cfg::defaults::path_cn,
+                                                 40));
 
         root.add(wups::config::file_item::create(cfg::labels::path_kr,
                                                  cfg::path_kr,
-                                                 cfg::defaults::path_kr));
+                                                 cfg::defaults::path_kr,
+                                                 40));
 
         root.add(wups::config::file_item::create(cfg::labels::path_tw,
                                                  cfg::path_tw,
-                                                 cfg::defaults::path_tw));
+                                                 cfg::defaults::path_tw,
+                                                 40));
 
         return WUPSCONFIG_API_CALLBACK_RESULT_SUCCESS;
     }
