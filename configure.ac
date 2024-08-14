@@ -21,7 +21,8 @@ AC_PROG_CXX
 AX_APPEND_COMPILE_FLAGS([-std=c++23], [CXX])
 AC_LANG([C++])
 
+AC_CONFIG_SUBDIRS([external/libwupsxx])
+
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 
-AC_CONFIG_SUBDIRS([external/libwupsxx])
