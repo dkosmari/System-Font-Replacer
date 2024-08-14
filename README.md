@@ -20,7 +20,7 @@ them in `SD:/wiiu/fonts/`; that's the default location the plugin looks for font
    - Press **A** to enter a folder;
    - Press **L** to leave a folder;
    - Press **←** or **→** to select the content of a folder;
-   - Press **X** to reset back to the default value (`SD:/wiiu/fonts/`)
+   - Press **X** to reset back to the default value (`SD:/wiiu/fonts/`);
    - Press **B** to finish editing and go back to the menu.
 
    Note that, if you select a directory (like the default, `SD:/wiiu/fonts`) the font will
@@ -63,10 +63,8 @@ that area. In this repository you can find a [Python script](merge-fonts.py), th
        fontforge  merge-fonts.py  myfont.ttf  path/to/original/CafeStd.ttf  myfont-CafeStd.ttf
 
    - The first font has priority, all symbols from it will be copied to the output.
-
    - The second font is only used to fill the missing symbols, except for the PUA block
      (it is always taken from the second font.)
-
    - The third font is the name of the output file. It's a good idea to use the names of
      both original fonts, so you remember what's in it.
 
