@@ -160,6 +160,9 @@ menu_open(WUPSConfigCategoryHandle root_handle)
                                                  cfg::defaults::path_tw,
                                                  40));
 
+        root.add(wups::config::text_item::create("Website",
+                                                 PACKAGE_URL));
+
         return WUPSCONFIG_API_CALLBACK_RESULT_SUCCESS;
     }
     catch (std::exception& e) {

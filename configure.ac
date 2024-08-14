@@ -4,9 +4,9 @@
 AC_PREREQ([2.69])
 AC_INIT([System Font Replacer],
         [0.0],
+        [https://github.com/dkosmari/System-Font-Replacer/issues],
         [],
-        [],
-        [])
+        [https://github.com/dkosmari/System-Font-Replacer])
 AC_CONFIG_SRCDIR([src/main.cpp])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
