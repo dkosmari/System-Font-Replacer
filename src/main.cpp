@@ -137,7 +137,8 @@ menu_open(WUPSConfigCategoryHandle root_handle)
 
         root.add(wups::config::bool_item::create(cfg::labels::enabled,
                                                  cfg::enabled,
-                                                 cfg::defaults::enabled));
+                                                 cfg::defaults::enabled,
+                                                 "yes", "no"));
 
         root.add(wups::config::file_item::create(cfg::labels::path_std,
                                                  cfg::path_std,

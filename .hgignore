@@ -2,7 +2,6 @@ syntax: glob
 
 *.elf
 *.o
-*.ttf
 *.wps
 *~
 .deps
@@ -17,6 +16,7 @@ config.h.in
 config.log
 config.status
 configure
+fonts
 Makefile
 Makefile.in
 stamp-h1
