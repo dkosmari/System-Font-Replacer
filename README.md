@@ -17,11 +17,11 @@ them in `SD:/wiiu/fonts/`; that's the default location the plugin looks for font
 
 3. Select the "Standard" font option, and press **A** to start editing it:
 
-   - Press **A** to enter a folder;
-   - Press **L** to leave a folder;
-   - Press **←** or **→** to select the content of a folder;
+   - Press **→** to enter a folder;
+   - Press **←** to leave a folder;
+   - Press **↑** or **↓** to change the file;
    - Press **X** to reset back to the default value (`SD:/wiiu/fonts/`);
-   - Press **B** to finish editing and go back to the menu.
+   - Press **A** to confirm, or **B** to cancel the change.
 
    Note that, if you select a directory (like the default, `SD:/wiiu/fonts`) the font will
    not be replaced, and the original system font is used instead.
