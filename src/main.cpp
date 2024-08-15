@@ -187,38 +187,46 @@ menu_close()
 std::optional<blob_t>
 try_load_file(const std::filesystem::path& file_path)
 {
+    FILE* f = nullptr;
     try {
         // silently exits if file doesn't exist
         if (!exists(file_path))
             return {};
 
         auto size = file_size(file_path);
-        // empty file is probably a mistake; corrupted FS or broken FTP transfer
-        if (size == 0)
-            throw std::runtime_error{"file size is zero!"};
+        // too small file is probably a mistake; corrupted FS or broken FTP transfer
+        if (size < 8)
+            throw std::runtime_error{"file size is too small!"};
 
-        blob_t data(size);
-
-        std::FILE* f = std::fopen(file_path.c_str(), "rb");
+        f = std::fopen(file_path.c_str(), "rb");
         if (!f)
             throw std::runtime_error{"cannot open \"" + file_path.string() + "\""};
 
-        auto res = std::fread(data.data(), 1, size, f);
+        const char ttf_magic[4] = {0x00, 0x01, 0x00, 0x00};
+        char file_magic[4];
+        auto res = std::fread(file_magic, 1, 4, f);
+        if (res != 4)
+            throw std::runtime_error{"cannot read TTF magic!"};
+        if (std::memcmp(ttf_magic, file_magic, 4))
+            throw std::runtime_error{"not TTF magic!"};
+
+        std::rewind(f);
+
+        blob_t content(size);
+        res = std::fread(content.data(), 1, size, f);
+        if (static_cast<std::uintmax_t>(res) != size)
+            throw std::runtime_error{"could not load entire file"};
+
         std::fclose(f);
+        f = nullptr;
 
-        if (static_cast<std::uintmax_t>(res) != size) {
-            LOG("could not load all of \"%s\": %u/%u\n",
-                file_path.c_str(),
-                static_cast<unsigned>(res),
-                static_cast<unsigned>(size));
-            // better to return empty than to load a partial file
-            return {};
-        }
-
-        return data;
+        return { std::move(content) };
     }
     catch (std::exception& e) {
-        LOG("failed to load file: %s\n", e.what());
+        if (f)
+            std::fclose(f);
+        LOG("failed to load file \"%s\": %s\n",
+            file_path.c_str(), e.what());
         return {};
     }
 }
