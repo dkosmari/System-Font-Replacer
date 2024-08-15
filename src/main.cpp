@@ -208,7 +208,7 @@ try_load_file(const std::filesystem::path& file_path)
         if (res != 4)
             throw std::runtime_error{"cannot read TTF magic!"};
         if (std::memcmp(ttf_magic, file_magic, 4))
-            throw std::runtime_error{"not TTF magic!"};
+            throw std::runtime_error{"no TTF magic in file!"};
 
         std::rewind(f);
 
