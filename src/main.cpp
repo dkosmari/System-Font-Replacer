@@ -17,6 +17,7 @@
 #include <coreinit/memory.h>
 #include <whb/log.h>
 #include <whb/log_module.h>
+#include <whb/log_udp.h>
 
 #include <wups.h>
 
@@ -43,6 +44,35 @@ WUPS_PLUGIN_LICENSE("GPLv3");
 
 WUPS_USE_WUT_DEVOPTAB();
 WUPS_USE_STORAGE(PACKAGE_TARNAME);
+
+
+struct log_manager {
+
+    bool module_init = false;
+    bool udp_init = false;
+
+
+    log_manager()
+    {
+        // Note: only use UDP if Logging Module failed to init.
+        if (!(module_init = WHBLogModuleInit()))
+            udp_init = WHBLogUdpInit();
+    }
+
+
+    ~log_manager()
+    {
+        if (module_init)
+            WHBLogModuleDeinit();
+        if (udp_init)
+            WHBLogUdpDeinit();
+    }
+
+};
+
+
+// This is alive between application start and end hooks.
+std::optional<log_manager> app_log_mgr;
 
 
 #define LOG(msg, ...)                                           \
@@ -185,7 +215,7 @@ menu_close()
 
 
 std::optional<blob_t>
-try_load_file(const std::filesystem::path& file_path)
+try_load_file(const path& file_path)
 {
     FILE* f = nullptr;
     try {
@@ -234,7 +264,7 @@ try_load_file(const std::filesystem::path& file_path)
 
 INITIALIZE_PLUGIN()
 {
-    WHBLogModuleInit();
+    log_manager log_guard;
 
     WUPSConfigAPIOptionsV1 options{ .name = PACKAGE_NAME };
     auto status = WUPSConfigAPI_Init(options, menu_open, menu_close);
@@ -263,9 +293,15 @@ INITIALIZE_PLUGIN()
 }
 
 
-DEINITIALIZE_PLUGIN()
+ON_APPLICATION_START()
 {
-    WHBLogModuleDeinit();
+    app_log_mgr.emplace();
+}
+
+
+ON_APPLICATION_ENDS()
+{
+    app_log_mgr.reset();
 }
 
 
