@@ -55,9 +55,10 @@ replacement font doesn't have the correct symbols in that block, the text might 
 rendered incorrectly.
 
 To get correct text rendering you have to edit your custom font, to add the correct
-symbols to that area. In this repository you can find a [Python script](merge-fonts.py),
-that uses [FontForge](https://fontforge.org/) to do that automatically, copying the PUA
-block (and any other missing symbol) from the original system font into your custom font.
+symbols to that area. In this repository you can find a Python script,
+[`merge-fonts.py`](merge-fonts.py), that uses [FontForge](https://fontforge.org/) to do
+that automatically, copying the PUA block (and any other missing symbol) from the original
+system font into your custom font.
 
 1. Start by getting a copy of the original system fonts on your Wii U, from
    `/storage_mlc/sys/title/0005001b/10042400/content` using
@@ -82,7 +83,7 @@ block (and any other missing symbol) from the original system font into your cus
    - The last argument is the name of the output file. It's a good idea to use the names
      of both source fonts, so you remember what's in the output.
 
-   There's also the [`merge-pua.py` script](merge-pua.py), that only merges in the PUA
+   There's also the [`merge-pua.py`](merge-pua.py) script, that only merges in the PUA
    symbols from the second font, and nothing else. The result is a much smaller output
    font, but it might still be missing some symbols; it depends on how "complete" your
    source font is.
