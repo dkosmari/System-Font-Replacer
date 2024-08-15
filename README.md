@@ -23,6 +23,9 @@ them in `SD:/wiiu/fonts/`; that's the default location the plugin looks for font
    - Press **X** to reset back to the default value (`SD:/wiiu/fonts/`);
    - Press **A** to confirm, or **B** to cancel the change.
 
+   Use it to navigate to the desired .ttf font you want to use, then press **A** to
+   confirm it.
+
    Note that, if you select a directory (like the default, `SD:/wiiu/fonts`) the font will
    not be replaced, and the original system font is used instead.
 
