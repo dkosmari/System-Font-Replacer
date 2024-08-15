@@ -14,7 +14,7 @@ EXTRA_DIST = \
 
 AM_CPPFLAGS = \
 	$(DEVKITPRO_CPPFLAGS) \
-	-I external/libwupsxx/include
+	-Iexternal/libwupsxx/include
 
 AM_CXXFLAGS = \
 	$(DEVKITPRO_CXXFLAGS) \
