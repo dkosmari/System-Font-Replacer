@@ -7,14 +7,17 @@
  */
 
 #include <cstdio>
+#include <cstring>              // strcmp
 #include <filesystem>
 #include <optional>
 #include <stdexcept>
 #include <utility>              // move()
 #include <vector>
 
-#include <coreinit/cosreport.h>
+#include <coreinit/debug.h>
 #include <coreinit/memory.h>
+#include <coreinit/thread.h>
+#include <sysapp/switch.h>
 #include <whb/log.h>
 #include <whb/log_module.h>
 #include <whb/log_udp.h>
@@ -92,28 +95,31 @@ blob_t font_tw;
 namespace cfg {
 
     namespace labels {
-        const char* enabled  = "Enabled";
-        const char* path_cn  = "Simpl. Chinese";
-        const char* path_kr  = "Korean";
-        const char* path_std = "Standard";
-        const char* path_tw  = "Trad. Chinese";
+        const char* enabled   = "Enabled";
+        const char* only_menu = "Only replace on Wii U Menu";
+        const char* path_cn   = "Simpl. Chinese";
+        const char* path_kr   = "Korean";
+        const char* path_std  = "Standard";
+        const char* path_tw   = "Trad. Chinese";
     }
 
 
     namespace defaults {
-        bool enabled  = true;
-        path path_cn  = "fs:/vol/external01/wiiu/fonts";
-        path path_kr  = "fs:/vol/external01/wiiu/fonts";
-        path path_std = "fs:/vol/external01/wiiu/fonts";
-        path path_tw  = "fs:/vol/external01/wiiu/fonts";
+        bool enabled   = true;
+        bool only_menu = true;
+        path path_cn   = "fs:/vol/external01/wiiu/fonts";
+        path path_kr   = "fs:/vol/external01/wiiu/fonts";
+        path path_std  = "fs:/vol/external01/wiiu/fonts";
+        path path_tw   = "fs:/vol/external01/wiiu/fonts";
     }
 
 
-    bool enabled  = defaults::enabled;
-    path path_cn  = defaults::path_cn;
-    path path_kr  = defaults::path_kr;
-    path path_std = defaults::path_std;
-    path path_tw  = defaults::path_tw;
+    bool enabled   = defaults::enabled;
+    bool only_menu = defaults::only_menu;
+    path path_cn   = defaults::path_cn;
+    path path_kr   = defaults::path_kr;
+    path path_std  = defaults::path_std;
+    path path_tw   = defaults::path_tw;
 
 
     void
@@ -122,6 +128,7 @@ namespace cfg {
         try {
 #define LOAD(x) wups::storage::load_or_init(#x, x, defaults::x)
             LOAD(enabled);
+            LOAD(only_menu);
             LOAD(path_cn);
             LOAD(path_kr);
             LOAD(path_std);
@@ -140,6 +147,7 @@ namespace cfg {
         try {
 #define STORE(x) wups::storage::store(#x, x)
             STORE(enabled);
+            STORE(only_menu);
             STORE(path_cn);
             STORE(path_kr);
             STORE(path_std);
@@ -168,7 +176,12 @@ menu_open(WUPSConfigCategoryHandle root_handle)
         root.add(wups::config::bool_item::create(cfg::labels::enabled,
                                                  cfg::enabled,
                                                  cfg::defaults::enabled,
-                                                 "yes", "no"));
+                                                 "■", "□"));
+
+        root.add(wups::config::bool_item::create(cfg::labels::only_menu,
+                                                 cfg::only_menu,
+                                                 cfg::defaults::only_menu,
+                                                 "■", "□"));
 
         root.add(wups::config::file_item::create(cfg::labels::path_std,
                                                  cfg::path_std,
@@ -314,6 +327,20 @@ DECL_FUNCTION(BOOL,
 {
     if (!cfg::enabled)
         goto real_function;
+
+    if (cfg::only_menu) {
+        unsigned upid = OSGetUPID();
+        if (upid != SYSAPP_PFID_WII_U_MENU)
+            goto real_function;
+
+        // Extra check: don't use it on the software keyboard
+        OSThread* tid = OSGetCurrentThread();
+        const char* tname = OSGetThreadName(tid);
+        // LOG("called from upid=%u, type=%u, thread=%p (%s)\n",
+        //     upid, (unsigned)type, tid, tname);
+        if (tname && !strcmp("MenSwkbdCalculator_Create", tname))
+            goto real_function;
+    }
 
     switch (type) {
 
