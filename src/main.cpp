@@ -46,10 +46,10 @@ WUPS_USE_STORAGE(PACKAGE_TARNAME);
 
 
 #define LOG(msg, ...)                                           \
-    WHBLogPrintf("[" PACKAGE_TARNAME "] %s:%d in %s: " msg,     \
+    WHBLogPrintf("[" PACKAGE_TARNAME "] %s:%d/%s(): " msg,      \
                  __FILE__,                                      \
                  __LINE__,                                      \
-                 __PRETTY_FUNCTION__,                           \
+                 __func__,                                      \
                  __VA_ARGS__)
 
 
@@ -189,8 +189,8 @@ try_load_file(const std::filesystem::path& file_path)
 {
     FILE* f = nullptr;
     try {
-        // silently exits if file doesn't exist
-        if (!exists(file_path))
+        // silently exits if file doesn't exist, or is not a file
+        if (!exists(file_path) || !is_regular_file(file_path))
             return {};
 
         auto size = file_size(file_path);
