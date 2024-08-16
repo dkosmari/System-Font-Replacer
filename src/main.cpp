@@ -339,8 +339,6 @@ DECL_FUNCTION(BOOL,
         // Extra check: don't use it on the software keyboard.
         OSThread* th_id = OSGetCurrentThread();
         const char* th_name = OSGetThreadName(th_id);
-        // LOG("called from title=%016llx, type=%u, thread=%p (%s)\n",
-        //     title, (unsigned)type, th_id, th_name);
         if (th_name && !strcmp("MenSwkbdCalculator_Create", th_name))
             goto real_function;
     }

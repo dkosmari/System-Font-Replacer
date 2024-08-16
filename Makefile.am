@@ -9,7 +9,10 @@ EXTRA_DIST = \
 	AUTHORS \
 	bootstrap \
 	COPYING \
+	docker-build.sh \
+	Dockerfile \
 	merge-fonts.py \
+	merge-pua.py \
 	README.md
 
 
