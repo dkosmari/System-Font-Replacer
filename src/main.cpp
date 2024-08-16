@@ -17,6 +17,7 @@
 #include <coreinit/debug.h>
 #include <coreinit/memory.h>
 #include <coreinit/thread.h>
+#include <coreinit/title.h>
 #include <sysapp/switch.h>
 #include <whb/log.h>
 #include <whb/log_module.h>
@@ -329,16 +330,18 @@ DECL_FUNCTION(BOOL,
         goto real_function;
 
     if (cfg::only_menu) {
-        unsigned upid = OSGetUPID();
-        if (upid != SYSAPP_PFID_WII_U_MENU)
+        const std::uint64_t wii_u_menu_id = 0x0005001010040000;
+        const std::uint64_t region_mask   = 0xfffffffffffffcff;
+        const std::uint64_t title = OSGetTitleID();
+        if ((title & region_mask) != wii_u_menu_id)
             goto real_function;
 
-        // Extra check: don't use it on the software keyboard
-        OSThread* tid = OSGetCurrentThread();
-        const char* tname = OSGetThreadName(tid);
-        // LOG("called from upid=%u, type=%u, thread=%p (%s)\n",
-        //     upid, (unsigned)type, tid, tname);
-        if (tname && !strcmp("MenSwkbdCalculator_Create", tname))
+        // Extra check: don't use it on the software keyboard.
+        OSThread* th_id = OSGetCurrentThread();
+        const char* th_name = OSGetThreadName(th_id);
+        // LOG("called from title=%016llx, type=%u, thread=%p (%s)\n",
+        //     title, (unsigned)type, th_id, th_name);
+        if (th_name && !strcmp("MenSwkbdCalculator_Create", th_name))
             goto real_function;
     }
 

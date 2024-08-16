@@ -4,6 +4,9 @@ This is an Aroma plugin to safely temporarily replace the Wii U's system font.
 
 **No system file is modified by this plugin. All changes are done in RAM only.**
 
+The perfect solution for completing your custom Wii U Menu theme, without having to modify
+anything in your NAND.
+
 
 ## Usage
 
@@ -13,7 +16,7 @@ them in `SD:/wiiu/fonts/`; that's the default location the plugin looks for font
 1. Open up the WUPS menu (**L + ↓ + SELECT**) and enter the **System Font
    Replacer** menu.
 
-2. Ensure the "Enabled" option is set to "yes", otherwise the plugin won't do anything.
+2. Ensure the "Enabled" option is enabled ("■"), otherwise the plugin won't do anything.
 
 3. Select the "Standard" font option, and press **A** to start editing it:
 
@@ -37,8 +40,9 @@ them in `SD:/wiiu/fonts/`; that's the default location the plugin looks for font
 Not every game/app has good a font rendering implementation. Some cannot handle more
 "advanced" TTF fonts, and will either render it incorrectly, or outright crash.
 
-Please do not report bugs about crashes that only occur with some fonts, that's a problem
-with the game/app, there's nothing this plugin can do to fix it.
+Please do not report bugs about crashes that only occur with some fonts, that's a
+limitation inside the game/app, there's nothing this plugin can do to fix it.
+
 
 ## Large fonts
 
@@ -91,5 +95,10 @@ system font into your custom font.
 3. Copy the output font to your SD card, into `SD:/wiiu/fonts/`, then configure the plugin
    to use it.
 
-**Be aware of copyright restrictions.** It's better to not distribute merged fonts, unless
-you're sure the font's license permits modified copies to be distributed.
+
+## Custom font outside the Wii U Menu
+
+If you disable the "Only replace on Wii U Menu" option, the font will show up in any other
+software that requests the system font. Some of them may crash, or might not render
+properly because the characters have different sizes than the original font. To avoid
+surprises, leave this option enabled ("■").

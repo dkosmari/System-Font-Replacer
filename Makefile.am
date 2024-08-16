@@ -6,6 +6,7 @@ SUBDIRS = external/libwupsxx
 
 
 EXTRA_DIST = \
+	AUTHORS \
 	bootstrap \
 	COPYING \
 	merge-fonts.py \
