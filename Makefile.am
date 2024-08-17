@@ -6,13 +6,14 @@ SUBDIRS = external/libwupsxx
 
 
 EXTRA_DIST = \
+	assets \
 	AUTHORS \
 	bootstrap \
+	copy-pua.py \
 	COPYING \
 	docker-build.sh \
 	Dockerfile \
 	merge-fonts.py \
-	merge-pua.py \
 	README.md
 
 
