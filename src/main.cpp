@@ -97,11 +97,11 @@ namespace cfg {
 
     namespace labels {
         const char* enabled   = "Enabled";
-        const char* only_menu = "Only replace on Wii U Menu";
-        const char* path_cn   = "Simpl. Chinese";
-        const char* path_kr   = "Korean";
-        const char* path_std  = "Standard";
-        const char* path_tw   = "Trad. Chinese";
+        const char* only_menu = "Use custom fonts only for Wii U Menu";
+        const char* path_cn   = "Cn Font";
+        const char* path_kr   = "Kr Font";
+        const char* path_std  = "Std Font";
+        const char* path_tw   = "Tw Font";
     }
 
 
@@ -172,17 +172,12 @@ menu_open(WUPSConfigCategoryHandle root_handle)
 
         wups::config::category root{root_handle};
 
-        root.add(wups::config::text_item::create("NOTE: reboot for changes to take effect correctly."));
+        root.add(wups::config::text_item::create("NOTE: Changes might NOT take effect until the next boot."));
 
         root.add(wups::config::bool_item::create(cfg::labels::enabled,
                                                  cfg::enabled,
                                                  cfg::defaults::enabled,
-                                                 "■", "□"));
-
-        root.add(wups::config::bool_item::create(cfg::labels::only_menu,
-                                                 cfg::only_menu,
-                                                 cfg::defaults::only_menu,
-                                                 "■", "□"));
+                                                 "yes", "no"));
 
         root.add(wups::config::file_item::create(cfg::labels::path_std,
                                                  cfg::path_std,
@@ -203,6 +198,11 @@ menu_open(WUPSConfigCategoryHandle root_handle)
                                                  cfg::path_tw,
                                                  cfg::defaults::path_tw,
                                                  40));
+
+        root.add(wups::config::bool_item::create(cfg::labels::only_menu,
+                                                 cfg::only_menu,
+                                                 cfg::defaults::only_menu,
+                                                 "yes", "no"));
 
         root.add(wups::config::text_item::create("Website",
                                                  PACKAGE_URL));
@@ -229,22 +229,22 @@ menu_close()
 
 
 std::optional<blob_t>
-try_load_file(const path& file_path)
+try_load_font(const path& font_path)
 {
     FILE* f = nullptr;
     try {
         // silently exits if file doesn't exist, or is not a file
-        if (!exists(file_path) || !is_regular_file(file_path))
+        if (!exists(font_path) || !is_regular_file(font_path))
             return {};
 
-        auto size = file_size(file_path);
+        auto size = file_size(font_path);
         // too small file is probably a mistake; corrupted FS or broken FTP transfer
         if (size < 8)
-            throw std::runtime_error{"file size is too small!"};
+            throw std::runtime_error{"font file size is too small!"};
 
-        f = std::fopen(file_path.c_str(), "rb");
+        f = std::fopen(font_path.c_str(), "rb");
         if (!f)
-            throw std::runtime_error{"cannot open \"" + file_path.string() + "\""};
+            throw std::runtime_error{"cannot open \"" + font_path.string() + "\""};
 
         const char ttf_magic[4] = {0x00, 0x01, 0x00, 0x00};
         char file_magic[4];
@@ -252,14 +252,14 @@ try_load_file(const path& file_path)
         if (res != 4)
             throw std::runtime_error{"cannot read TTF magic!"};
         if (std::memcmp(ttf_magic, file_magic, 4))
-            throw std::runtime_error{"no TTF magic in file!"};
+            throw std::runtime_error{"no TTF magic in font file!"};
 
         std::rewind(f);
 
         blob_t content(size);
         res = std::fread(content.data(), 1, size, f);
         if (static_cast<std::uintmax_t>(res) != size)
-            throw std::runtime_error{"could not load entire file"};
+            throw std::runtime_error{"could not load entire font file"};
 
         std::fclose(f);
         f = nullptr;
@@ -269,8 +269,8 @@ try_load_file(const path& file_path)
     catch (std::exception& e) {
         if (f)
             std::fclose(f);
-        LOG("failed to load file \"%s\": %s\n",
-            file_path.c_str(), e.what());
+        LOG("failed to load font file \"%s\": %s\n",
+            font_path.c_str(), e.what());
         return {};
     }
 }
@@ -292,16 +292,16 @@ INITIALIZE_PLUGIN()
     if (!cfg::enabled)
         return;
 
-    if (auto font = try_load_file(cfg::path_cn))
+    if (auto font = try_load_font(cfg::path_cn))
         font_cn = std::move(*font);
 
-    if (auto font = try_load_file(cfg::path_kr))
+    if (auto font = try_load_font(cfg::path_kr))
         font_kr = std::move(*font);
 
-    if (auto font = try_load_file(cfg::path_std))
+    if (auto font = try_load_font(cfg::path_std))
         font_std = std::move(*font);
 
-    if (auto font = try_load_file(cfg::path_tw))
+    if (auto font = try_load_font(cfg::path_tw))
         font_tw = std::move(*font);
 
 }

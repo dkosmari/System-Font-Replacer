@@ -2,10 +2,10 @@
 
 This is an Aroma plugin to safely temporarily replace the Wii U's system font.
 
-**No system file is modified by this plugin. All changes are done in RAM only.**
-
 The perfect solution for completing your custom Wii U Menu theme, without having to modify
 anything in your NAND.
+
+**No system file is modified by this plugin. All changes are done in RAM only.**
 
 
 ## Usage
@@ -16,9 +16,9 @@ them in `SD:/wiiu/fonts/`; that's the default location the plugin looks for font
 1. Open up the WUPS menu (**L + ↓ + SELECT**) and enter the **System Font
    Replacer** menu.
 
-2. Ensure the "Enabled" option is enabled ("■"), otherwise the plugin won't do anything.
+2. Ensure the "Enabled" option is set to "*yes*", otherwise the plugin won't do anything.
 
-3. Select the "Standard" font option, and press **A** to start editing it:
+3. Select the "Std Font" option, and press **A** to start editing it:
 
    - Press **→** to enter a folder;
    - Press **←** to leave a folder;
@@ -32,7 +32,10 @@ them in `SD:/wiiu/fonts/`; that's the default location the plugin looks for font
    Note that, if you select a directory (like the default, `SD:/wiiu/fonts`) the font will
    not be replaced, and the original system font is used instead.
 
-4. Reboot your system.
+4. Exit the plugin menu. If you open it again, you can immediately check if the new font
+   got loaded or not.
+
+5. Reboot your Wii U.
 
 
 ## Freezes/Crashes and text glitches
@@ -56,20 +59,21 @@ size seem to work fine; I have not tested larger fonts.
 Some Wii U software make use of the system font's Private Use Area (PUA) block (from
 `U+E000` to `U+E099`), to show symbols for gamepad buttons, sticks, etc. If the
 replacement font doesn't have the correct symbols in that block, the text might be
-rendered incorrectly.
+rendered incorrectly. To get correct text rendering you have to edit your custom font, to
+add the correct symbols to that block.
 
-To get correct text rendering you have to edit your custom font, to add the correct
-symbols to that area. In this repository you can find a Python script,
-[`merge-fonts.py`](merge-fonts.py), that uses [FontForge](https://fontforge.org/) to do
-that automatically, copying the PUA block (and any other missing symbol) from the original
-system font into your custom font.
+In this repository you can find a Python script, [`merge-fonts.py`](merge-fonts.py), that
+uses the [FontForge](https://fontforge.org/) program to do that automatically, copying the
+PUA block (and any other missing symbol) from the original system font into your custom
+font.
 
 1. Start by getting a copy of the original system fonts on your Wii U, from
    `/storage_mlc/sys/title/0005001b/10042400/content` using
    [ftpiiu](https://github.com/wiiu-env/ftpiiu_plugin).
 
 2. Assuming the font you want to use on your Wii U is called `myfont.ttf`, and you want to
-   use it as the "Standard" font (`CafeStd.ttf`), you can execute the script like this:
+   use it as the "Std Font" font (replacing `CafeStd.ttf`), you can execute the script
+   like this:
 
        ./merge-fonts.py  myfont.ttf  path/to/original/CafeStd.ttf  myfont+CafeStd.ttf
 
@@ -87,7 +91,7 @@ system font into your custom font.
    - The last argument is the name of the output file. It's a good idea to use the names
      of both source fonts, so you remember what's in the output.
 
-   There's also the [`merge-pua.py`](merge-pua.py) script, that only merges in the PUA
+   There's also the [`copy-pua.py`](copy-pua.py) script, that only copies in the PUA
    symbols from the second font, and nothing else. The result is a much smaller output
    font, but it might still be missing some symbols; it depends on how "complete" your
    source font is.
@@ -96,9 +100,11 @@ system font into your custom font.
    to use it.
 
 
-## Custom font outside the Wii U Menu
+## "Use custom fonts only for Wii U Menu"
 
-If you disable the "Only replace on Wii U Menu" option, the font will show up in any other
-software that requests the system font. Some of them may crash, or might not render
-properly because the characters have different sizes than the original font. To avoid
-surprises, leave this option enabled ("■").
+If you disable this option, the font will show up in any other software that requests the
+system font. Some of them may crash, or might not render properly because the characters
+have different sizes than the original font. To avoid surprises, leave this option enabled
+("*yes*"), so only the Wii U Menu is affected by the custom font. If you trust your custom
+font to not crash the on-screen keyboard, the System Settings, the Friends List, etc, you
+can disable this option ("*no*").
