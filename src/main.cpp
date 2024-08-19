@@ -182,22 +182,26 @@ menu_open(WUPSConfigCategoryHandle root_handle)
         root.add(wups::config::file_item::create(cfg::labels::path_std,
                                                  cfg::path_std,
                                                  cfg::defaults::path_std,
-                                                 40));
+                                                 40,
+                                                 {".ttf"}));
 
         root.add(wups::config::file_item::create(cfg::labels::path_cn,
                                                  cfg::path_cn,
                                                  cfg::defaults::path_cn,
-                                                 40));
+                                                 40,
+                                                 {".ttf"}));
 
         root.add(wups::config::file_item::create(cfg::labels::path_kr,
                                                  cfg::path_kr,
                                                  cfg::defaults::path_kr,
-                                                 40));
+                                                 40,
+                                                 {".ttf"}));
 
         root.add(wups::config::file_item::create(cfg::labels::path_tw,
                                                  cfg::path_tw,
                                                  cfg::defaults::path_tw,
-                                                 40));
+                                                 40,
+                                                 {".ttf"}));
 
         root.add(wups::config::bool_item::create(cfg::labels::only_menu,
                                                  cfg::only_menu,
