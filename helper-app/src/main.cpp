@@ -343,7 +343,7 @@ int main()
     whb::proc proc;
     whb::console console;
 
-    console.set_color(64, 32, 0);
+    console.set_color(80, 32, 0);
 
     cout << "Helper program for " PACKAGE_STRING << endl;
     cout << PACKAGE_URL << endl;
