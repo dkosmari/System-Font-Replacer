@@ -1,6 +1,7 @@
 #!/bin/bash
 
 PLUGIN=system-font-replacer
+APP=system-font-replacer-helper
 IMAGE=aroma-plugin-$PLUGIN-image
 CONTAINER=aroma-plugin-$PLUGIN-container
 
@@ -28,5 +29,6 @@ echo "Compilation finished."
 
 # Copy the wps file out.
 docker cp "$CONTAINER:/project/$PLUGIN.wps" .
+docker cp "$CONTAINER:/project/helper-app/$APP.wuhb" .
 
 cleanup 0

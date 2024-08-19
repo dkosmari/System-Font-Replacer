@@ -26,16 +26,31 @@ jobs:
           ./configure --host=powerpc-eabi CXXFLAGS="-O2 -ffunction-sections -fipa-pta"
           make
 
-    - name: Copy from container to host
+    - name: Copy plugin to host
       uses: tj-actions/docker-cp@v2
       with:
         container: plugin-builder-container
         source: /project/system-font-replacer.wps
         destination: system-font-replacer.wps
 
-    - name: Upload
+    - name: Copy helper app to host
+      uses: tj-actions/docker-cp@v2
+      with:
+        container: plugin-builder-container
+        source: /project/helper-app/system-font-replacer-helper.wuhb
+        destination: system-font-replacer-helper.wuhb
+
+
+    - name: Upload plugin
       uses: actions/upload-artifact@v4
       with:
         name: system-font-replacer.wps
         path: "*.wps"
+        if-no-files-found: error
+
+    - name: Upload app
+      uses: actions/upload-artifact@v4
+      with:
+        name: system-font-replacer-helper.wuhb
+        path: "*.wuhb"
         if-no-files-found: error
