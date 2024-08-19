@@ -340,8 +340,8 @@ apply_patch(const blob_t& bps_patch,
 int main()
 {
     whb::log_module log_guard;
-    whb::console console;
     whb::proc proc;
+    whb::console console;
 
     console.set_color(64, 32, 0);
 

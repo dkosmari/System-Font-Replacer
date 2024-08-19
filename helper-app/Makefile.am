@@ -38,7 +38,7 @@ $(WUHB_FILE): $(RPX_FILE)
 	$(WUHBTOOL) $< $@ \
 		--icon=assets/icon.png \
 		--author="Daniel K. O." \
-		--name="$(PACKAGE)" \
+		--name="$(PACKAGE_NAME)" \
 		--short-name="$(PACKAGE_TARNAME)-helper"
 
 
