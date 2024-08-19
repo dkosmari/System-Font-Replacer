@@ -1,3 +1,4 @@
 #!/bin/sh -x
 (cd external/libwupsxx && ./bootstrap "$@")
+(cd helper-app && ./bootstrap "$@")
 exec autoreconf --install "$@"

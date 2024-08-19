@@ -2,7 +2,10 @@ syntax: glob
 
 *.elf
 *.o
+*.rpx
+*.tar.gz
 *.wps
+*.wuhb
 *~
 .deps
 .dirstamp

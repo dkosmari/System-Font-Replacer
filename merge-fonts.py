@@ -24,8 +24,11 @@ font = fontforge.open(input_name)
 font.selection.select(("ranges",), 0xE000, 0xE099)
 font.clear()
 
+# TODO: do em scaling, check element/font Info/general/em size
+
 # merge from the Cafe font into the input
 font.mergeFonts(cafe_name)
+
 
 # export a .ttf with the output name
 font.generate(output_name)

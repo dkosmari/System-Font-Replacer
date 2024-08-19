@@ -2,7 +2,9 @@
 DISTCLEANFILES = $(AMINCLUDE)
 
 
-SUBDIRS = external/libwupsxx
+SUBDIRS = \
+	external/libwupsxx \
+	helper-app
 
 
 EXTRA_DIST = \
@@ -52,8 +54,8 @@ uninstall-local:
 
 
 .PHONY: run
-run: $(WPS_FILE)
-	WIILOAD=tcp:wiiu wiiload $<
+run: all
+	WIILOAD=tcp:wiiu wiiload $(WPS_FILE)
 
 
 .PHONY: company
@@ -61,4 +63,5 @@ company: compile_flags.txt
 
 compile_flags.txt: Makefile
 	printf "%s" "$(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS)" | xargs -n1 | sort -u > $(srcdir)/compile_flags.txt
+	$(CPP) -xc++ /dev/null -E -Wp,-v 2>&1 | sed -n 's,^ ,-I,p' >> $(srcdir)/compile_flags.txt
 
