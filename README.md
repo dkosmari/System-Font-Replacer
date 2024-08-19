@@ -108,3 +108,13 @@ have different sizes than the original font. To avoid surprises, leave this opti
 ("*yes*"), so only the Wii U Menu is affected by the custom font. If you trust your custom
 font to not crash the on-screen keyboard, the System Settings, the Friends List, etc, you
 can disable this option ("*no*").
+
+
+## Helper App
+
+If you get a custom font in the form of a `.bps` patch, to be applied to one of the system
+fonts, you can use the [System Font Replacer Helper](helper-app) to convert it to a `.ttf` font.
+
+Simply put your `.bps` patches in the same place where you would copy your custom fonts,
+`SD:/wiiu/fonts/`, and run the Helper app. It will then automatically convert all `.bps`
+patches into `.ttf` fonts.
