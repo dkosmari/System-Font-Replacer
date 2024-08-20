@@ -1,34 +1,36 @@
 #!/usr/bin/env -S fontforge -quiet
 
 import sys
+from pathlib import Path
 
-if len(sys.argv) != 4:
+if len(sys.argv) < 3:
     print("""
-Required arguments:  inputfont.ttf  CafeX.ttf  outputfont.ttf
+Required arguments:  firstfont.ttf  secondfont.ttf  [outputfont.ttf]
 
-where 'CafeX.ttf' is one of: 'CafeCn.ttf'
-                             'CafeKr.ttf'
-                             'CafeStd.ttf'
-                             'CafeTw.ttf'
+If "outputfont.ttf" is not specified, it will be set to "firstfont+secondfont.ttf".
 """)
     sys.exit(1)
 
 
-input_name  = sys.argv[1]
-cafe_name   = sys.argv[2]
-output_name = sys.argv[3]
+first_name  = Path(sys.argv[1])
+second_name = Path(sys.argv[2])
+output_name = Path("{}+{}.ttf".format(first_name.stem, second_name.stem))
+if len(sys.argv) == 4:
+    output_name = Path(sys.argv[3])
 
-font = fontforge.open(input_name)
+font1 = fontforge.open(str(first_name))
 
-# first, make sure te Private Use Area is clear
-font.selection.select(("ranges",), 0xE000, 0xE099)
-font.clear()
+# first, make sure the Private Use Area is clear
+font1.selection.select(("ranges",), 0xE000, 0xE099)
+font1.clear()
 
-# TODO: do em scaling, check element/font Info/general/em size
+font2 = fontforge.open(str(second_name))
 
-# merge from the Cafe font into the input
-font.mergeFonts(cafe_name)
+# adjust font1 size so it matches font2
+font1.em = font2.em
 
+# fill in all missing glyphs in font1 using font2
+font1.mergeFonts(font2)
 
-# export a .ttf with the output name
-font.generate(output_name)
+# export to the output
+font1.generate(str(output_name))

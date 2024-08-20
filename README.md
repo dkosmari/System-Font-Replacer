@@ -43,11 +43,11 @@ them in `SD:/wiiu/fonts/`; that's the default location the plugin looks for font
 Not every game/app has good a font rendering implementation. Some cannot handle more
 "advanced" TTF fonts, and will either render it incorrectly, or outright crash.
 
-Please do not report bugs about crashes that only occur with some fonts, that's a
-limitation inside the game/app, there's nothing this plugin can do to fix it.
+Please do not report bugs about crashes that only occur with some fonts; that's a
+limitation inside the game/app, and there's nothing this plugin can do to fix it.
 
 
-## Large fonts
+## Large font files
 
 Aroma plugins have very limited amount of memory to use. If the font file is too large, it
 might use too much memory, and other plugins might stop working. Fonts up to 2.5 MiB in
@@ -88,8 +88,8 @@ font.
    - Every missing symbol (including the PUA block) in the output will be filled in with
      symbols from the second font.
 
-   - The last argument is the name of the output file. It's a good idea to use the names
-     of both source fonts, so you remember what's in the output.
+   - The last argument is optional, it's the name of the output file. It's a good idea to
+     use the names of both source fonts, so you remember what's in the output.
 
    There's also the [`copy-pua.py`](copy-pua.py) script, that only copies in the PUA
    symbols from the second font, and nothing else. The result is a much smaller output
@@ -103,11 +103,10 @@ font.
 ## "Use custom fonts only for Wii U Menu"
 
 If you disable this option, the font will show up in any other software that requests the
-system font. Some of them may crash, or might not render properly because the characters
-have different sizes than the original font. To avoid surprises, leave this option enabled
-("*yes*"), so only the Wii U Menu is affected by the custom font. If you trust your custom
-font to not crash the on-screen keyboard, the System Settings, the Friends List, etc, you
-can disable this option ("*no*").
+system font. Some of them may crash, or might not render properly. To avoid surprises,
+leave this option enabled ("*yes*"), so only the Wii U Menu is affected by the custom
+font. If you trust your custom font to not crash the on-screen keyboard, the System
+Settings, the Friends List, etc, you can disable this option ("*no*").
 
 
 ## Helper App
