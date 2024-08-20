@@ -425,6 +425,7 @@ int main()
             }
             catch (std::exception& e) {
                 cout << "Error in " << patch_path.filename() << "\n"
+                     << "WHAT="
                      << e.what()
                      << endl;
                 ++num_errors;

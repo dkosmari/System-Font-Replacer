@@ -21,6 +21,7 @@ using std::uint32_t;
 using std::uint64_t;
 using std::uint8_t;
 using std::uintmax_t;
+using std::to_string;
 
 
 using span_size_t = span<byte>::size_type;
@@ -29,6 +30,17 @@ using namespace std::literals;
 
 
 namespace bps {
+
+
+    error::error(const char* msg) :
+        std::runtime_error{"BPS error: "s + msg}
+    {}
+
+
+    error::error(const std::string& msg) :
+        std::runtime_error{"BPS error: "s + msg}
+    {}
+
 
 
     template<typename T>
@@ -102,7 +114,8 @@ namespace bps {
         read()
         {
             if (pos >= data_span.size())
-                throw std::out_of_range{"read()"};
+                throw std::out_of_range{"read() pos="
+                                        + to_string(pos)};
             return to_integer<uint8_t>(data_span[pos++]);
         }
 
@@ -111,7 +124,9 @@ namespace bps {
         read_from(span_size_t idx)
         {
             if (idx >= data_span.size())
-                throw std::out_of_range{"read_from()"};
+                throw std::out_of_range{"read_from("
+                                        + to_string(idx)
+                                        + ")"};
             return to_integer<uint8_t>(data_span[idx]);
         }
 
@@ -120,7 +135,10 @@ namespace bps {
         read(span_size_t size)
         {
             if (pos + size >= data_span.size())
-                throw std::out_of_range{"read(size)"};
+                throw std::out_of_range{"read("
+                                        + to_string(size)
+                                        + ") pos="
+                                        + to_string(pos)};
             auto result = data_span.subspan(pos, size);
             pos += size;
             return result;
@@ -131,7 +149,11 @@ namespace bps {
         read_from(span_size_t idx, span_size_t size)
         {
             if (idx + size >= data_span.size())
-                throw std::out_of_range{"read_from(idx, size)"};
+                throw std::out_of_range{"read_from("
+                                        + to_string(idx)
+                                        + ", "
+                                        + to_string(size)
+                                        + ")"};
             return data_span.subspan(idx, size);
         }
 
@@ -140,33 +162,45 @@ namespace bps {
         uint32_t
         read_le32()
         {
-            uint32_t val =  read();
-            val |= uint32_t{read()} << 8;
-            val |= uint32_t{read()} << 16;
-            val |= uint32_t{read()} << 24;
-            return val;
+            try {
+                uint32_t val =  read();
+                val |= uint32_t{read()} << 8;
+                val |= uint32_t{read()} << 16;
+                val |= uint32_t{read()} << 24;
+                return val;
+            }
+            catch (std::out_of_range& e) {
+                throw std::out_of_range{"read_le32(): "
+                                        + std::string(e.what())};
+            }
         }
 
 
         uintmax_t
         read_varint()
         {
-            unsigned shifted = 0;
-            uintmax_t result = 0;
-            while (true) {
-                uint8_t next = read();
-                uintmax_t val = next & 0x7f;
-                if (shifted)
-                    ++val;
-                if (!safe_assign_lshift(val, shifted))
-                    throw std::runtime_error{"incorrect varint encoding"};
-                if (!safe_assign_add(result, val))
-                    throw std::overflow_error{"overflow reading varint"};
-                if (next & 0x80)
-                    break;
-                shifted += 7;
+            try {
+                unsigned shifted = 0;
+                uintmax_t result = 0;
+                while (true) {
+                    uint8_t next = read();
+                    uintmax_t val = next & 0x7f;
+                    if (shifted)
+                        ++val;
+                    if (!safe_assign_lshift(val, shifted))
+                        throw std::runtime_error{"read_varint(): incorrect varint encoding"};
+                    if (!safe_assign_add(result, val))
+                        throw std::overflow_error{"read_varint(): overflow reading varint"};
+                    if (next & 0x80)
+                        break;
+                    shifted += 7;
+                }
+                return result;
             }
-            return result;
+            catch (std::out_of_range& e) {
+                throw std::out_of_range{"read_varint(): "
+                                        + std::string(e.what())};
+            }
         }
 
 
@@ -246,11 +280,6 @@ namespace bps {
     };
 
 
-    error::error(const char* msg) :
-        std::runtime_error{"BPS error: "s + msg}
-    {}
-
-
     info
     get_info(span<const byte> patch)
     {
@@ -321,12 +350,17 @@ namespace bps {
         std::vector<byte> output;
         output.reserve(pinfo.size_out);
 
+        // Note: BPS patch is allowed to use 2 of the the CRC32s at the end, as extra
+        // usable data
         byte_istream patch_stream{patch.subspan(pinfo.data_start,
-                                                patch.size() - pinfo.data_start - 12)};
+                                                patch.size() - pinfo.data_start - 4)};
+        // Note: patch itself cannot read into the CRC32 area.
+        auto patch_data_size = patch.size() - pinfo.data_start - 12;
+
         byte_istream source_stream{input};
         byte_stream target_stream{output};
 
-        while (!patch_stream.eof()) {
+        while (patch_stream.pos < patch_data_size) {
             auto instr = patch_stream.read_varint();
             const action act = static_cast<action>(instr & 3);
             auto length = (instr >> 2) + 1;
@@ -334,18 +368,42 @@ namespace bps {
             switch (act) {
 
             case action::source_read:
-                {
+                try {
                     auto pos = output.size();
                     target_stream.write(source_stream.read_from(pos, length));
+                }
+                catch (std::exception& e) {
+                    throw error{"action=SourceRead, patch.pos="
+                                + to_string(patch_stream.pos)
+                                + ", length="
+                                + to_string(length)
+                                + ", source.pos="
+                                + to_string(source_stream.pos)
+                                + ", target.size="
+                                + to_string(target_stream.data_vec.size())
+                                + ", what="
+                                + std::string(e.what())};
                 }
                 break;
 
             case action::target_read:
-                target_stream.write(patch_stream.read(length));
+                try {
+                    target_stream.write(patch_stream.read(length));
+                }
+                catch (std::exception& e) {
+                    throw error{"action=TargetRead, patch.pos="
+                                + to_string(patch_stream.pos)
+                                + ", length="
+                                + to_string(length)
+                                + ", target.size="
+                                + to_string(target_stream.data_vec.size())
+                                + ", what="
+                                + std::string(e.what())};
+                }
                 break;
 
             case action::source_copy:
-                {
+                try {
                     auto delta = patch_stream.read_varint();
                     if (delta & 1)
                         source_stream.rewind(delta >> 1);
@@ -353,10 +411,22 @@ namespace bps {
                         source_stream.advance(delta >> 1);
                     target_stream.write(source_stream.read(length));
                 }
+                catch (std::exception& e) {
+                    throw error{"action=SourceCopy, patch.pos="
+                                + to_string(patch_stream.pos)
+                                + ", length="
+                                + to_string(length)
+                                + ", source.pos="
+                                + to_string(source_stream.pos)
+                                + ", target.size="
+                                + to_string(target_stream.data_vec.size())
+                                + ", what="
+                                + std::string(e.what())};
+                }
                 break;
 
             case action::target_copy:
-                {
+                try {
                     auto delta = patch_stream.read_varint();
                     if (delta & 1)
                         target_stream.rewind(delta >> 1);
@@ -366,6 +436,18 @@ namespace bps {
                     // just wrote.
                     while (length--)
                         target_stream.write(target_stream.read());
+                }
+                catch (std::exception& e) {
+                    throw error{"action=TargetCopy, patch.pos="
+                                + to_string(patch_stream.pos)
+                                + ", length="
+                                + to_string(length)
+                                + ", target.pos="
+                                + to_string(target_stream.pos)
+                                + ", target.size="
+                                + to_string(target_stream.data_vec.size())
+                                + ", what="
+                                + std::string(e.what())};
                 }
                 break;
 

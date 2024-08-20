@@ -12,8 +12,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
-#include <vector>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 
 namespace bps {
@@ -21,6 +22,7 @@ namespace bps {
     struct error : std::runtime_error {
 
         error(const char* msg);
+        error(const std::string& msg);
 
     };
 
