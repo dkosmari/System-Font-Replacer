@@ -326,10 +326,22 @@ ON_APPLICATION_ENDS()
 DECL_FUNCTION(BOOL,
               OSGetSharedData,
               OSSharedDataType type,
-              uint32_t unknown,
+              uint32_t unused,
               void** buf,
               uint32_t* size)
 {
+    if (unused == 0xefface) {
+        /*
+         * efface
+         *
+         * transitive verb: To cause to disappear (as anything impresses or inscribed upon
+         * a surface) by rubbing out, striking out, etc.; to erase; to render illegible or
+         * indiscernible.
+         */
+        unused = 0;
+        goto real_function;
+    }
+
     if (!cfg::enabled)
         goto real_function;
 
@@ -383,7 +395,7 @@ DECL_FUNCTION(BOOL,
     } // switch (type)
 
  real_function:
-    return real_OSGetSharedData(type, unknown, buf, size);
+    return real_OSGetSharedData(type, unused, buf, size);
 }
 
 
