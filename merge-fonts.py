@@ -40,5 +40,5 @@ if font1.em != font2.em:
 print('Merging fonts.')
 font1.mergeFonts(font2)
 
-printf('Exporting merged fonts to "{}".'.format(str(output_name)))
+print('Exporting merged fonts to "{}".'.format(output_name))
 font1.generate(str(output_name))
