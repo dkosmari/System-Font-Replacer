@@ -16,12 +16,13 @@
 #include "crc32.hpp"
 
 using std::byte;
+using std::intmax_t;
 using std::span;
+using std::to_string;
 using std::uint32_t;
 using std::uint64_t;
 using std::uint8_t;
 using std::uintmax_t;
-using std::to_string;
 
 
 using span_size_t = span<byte>::size_type;
@@ -134,7 +135,7 @@ namespace bps {
         span<const byte>
         read(span_size_t size)
         {
-            if (pos + size >= data_span.size())
+            if (pos + size > data_span.size())
                 throw std::out_of_range{"read("
                                         + to_string(size)
                                         + ") pos="
@@ -148,7 +149,7 @@ namespace bps {
         span<const byte>
         read_from(span_size_t idx, span_size_t size)
         {
-            if (idx + size >= data_span.size())
+            if (idx + size > data_span.size())
                 throw std::out_of_range{"read_from("
                                         + to_string(idx)
                                         + ", "
@@ -360,10 +361,13 @@ namespace bps {
         byte_istream source_stream{input};
         byte_stream target_stream{output};
 
+        uintmax_t act_idx = 0;
+
         while (patch_stream.pos < patch_data_size) {
             auto instr = patch_stream.read_varint();
             const action act = static_cast<action>(instr & 3);
             auto length = (instr >> 2) + 1;
+            uintmax_t delta;
 
             switch (act) {
 
@@ -373,16 +377,13 @@ namespace bps {
                     target_stream.write(source_stream.read_from(pos, length));
                 }
                 catch (std::exception& e) {
-                    throw error{"action=SourceRead, patch.pos="
-                                + to_string(patch_stream.pos)
-                                + ", length="
-                                + to_string(length)
-                                + ", source.pos="
-                                + to_string(source_stream.pos)
-                                + ", target.size="
-                                + to_string(target_stream.data_vec.size())
-                                + ", what="
-                                + std::string(e.what())};
+                    throw error{"patch.pos=" + to_string(patch_stream.pos)
+                                + ", idx=" + to_string(act_idx)
+                                + ", action=SourceRead"
+                                + ", length=" + to_string(length)
+                                + ", source.pos=" + to_string(source_stream.pos)
+                                + ", target.size=" + to_string(target_stream.data_vec.size())
+                                + ", what=" + std::string(e.what())};
                 }
                 break;
 
@@ -391,20 +392,19 @@ namespace bps {
                     target_stream.write(patch_stream.read(length));
                 }
                 catch (std::exception& e) {
-                    throw error{"action=TargetRead, patch.pos="
-                                + to_string(patch_stream.pos)
-                                + ", length="
-                                + to_string(length)
-                                + ", target.size="
-                                + to_string(target_stream.data_vec.size())
-                                + ", what="
-                                + std::string(e.what())};
+                    throw error{"patch.pos=" + to_string(patch_stream.pos)
+                                + ", idx=" + to_string(act_idx)
+                                + ", action=TargetRead"
+                                + ", length=" + to_string(length)
+                                + ", target.size=" + to_string(target_stream.data_vec.size())
+                                + ", what=" + std::string(e.what())};
                 }
                 break;
 
             case action::source_copy:
                 try {
-                    auto delta = patch_stream.read_varint();
+                    delta = 0;
+                    delta = patch_stream.read_varint();
                     if (delta & 1)
                         source_stream.rewind(delta >> 1);
                     else
@@ -412,22 +412,24 @@ namespace bps {
                     target_stream.write(source_stream.read(length));
                 }
                 catch (std::exception& e) {
-                    throw error{"action=SourceCopy, patch.pos="
-                                + to_string(patch_stream.pos)
-                                + ", length="
-                                + to_string(length)
-                                + ", source.pos="
-                                + to_string(source_stream.pos)
-                                + ", target.size="
-                                + to_string(target_stream.data_vec.size())
-                                + ", what="
-                                + std::string(e.what())};
+                    intmax_t rel = (delta >> 1);
+                    if (delta & 1)
+                        rel = -rel;
+                    throw error{"patch.pos=" + to_string(patch_stream.pos)
+                                + ", idx=" + to_string(act_idx)
+                                + ", action=SourceCopy"
+                                + ", length=" + to_string(length)
+                                + ", source.pos=" + to_string(source_stream.pos)
+                                + ", rel=" + to_string(rel)
+                                + ", target.size=" + to_string(target_stream.data_vec.size())
+                                + ", what=" + std::string(e.what())};
                 }
                 break;
 
             case action::target_copy:
                 try {
-                    auto delta = patch_stream.read_varint();
+                    delta = 0;
+                    delta = patch_stream.read_varint();
                     if (delta & 1)
                         target_stream.rewind(delta >> 1);
                     else
@@ -438,21 +440,23 @@ namespace bps {
                         target_stream.write(target_stream.read());
                 }
                 catch (std::exception& e) {
-                    throw error{"action=TargetCopy, patch.pos="
-                                + to_string(patch_stream.pos)
-                                + ", length="
-                                + to_string(length)
-                                + ", target.pos="
-                                + to_string(target_stream.pos)
-                                + ", target.size="
-                                + to_string(target_stream.data_vec.size())
-                                + ", what="
-                                + std::string(e.what())};
+                    intmax_t rel = (delta >> 1);
+                    if (delta & 1)
+                        rel = -rel;
+                    throw error{"patch.pos=" + to_string(patch_stream.pos)
+                                + ", idx=" + to_string(act_idx)
+                                + ", action=TargetCopy"
+                                + ", length=" + to_string(length)
+                                + ", target.pos=" + to_string(target_stream.pos)
+                                + ", rel=" + to_string(rel)
+                                + ", target.size=" + to_string(target_stream.data_vec.size())
+                                + ", what=" + std::string(e.what())};
                 }
                 break;
 
             } // switch (act)
 
+            ++act_idx;
         }
 
 

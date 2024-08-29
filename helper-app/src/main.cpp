@@ -391,13 +391,13 @@ int main()
                 patch_paths.push_back(entry.path());
         }
 
-        cout << "BPS patches found: " << patch_paths.size() << ".\n"
+        cout << "\nBPS patches found: " << patch_paths.size() << ".\n"
              << endl;
 
-        cout << "Press A to generate fonts from .bps patches,\n"
-             << "or any other button to cancel."
+        cout << "Press A to generate fonts from .bps patches...\n"
+             << "...or any other button to cancel."
              << endl;
-        cout << "**This safe, it will NOT modify your NAND.**" << endl;
+        cout << "\n**This safe, it will NOT modify your NAND.**" << endl;
 
         auto btn = wait_button_press();
         if ((btn & VPAD_BUTTON_A) == 0)

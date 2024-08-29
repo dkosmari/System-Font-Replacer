@@ -346,13 +346,29 @@ DECL_FUNCTION(BOOL,
         goto real_function;
 
     if (cfg::only_menu) {
+
+#if 0
+        /*
+          This fragment will be enabled if/when:
+          - https://github.com/wiiu-env/WiiUPluginLoaderBackend/pull/86
+          - https://github.com/wiiu-env/WiiUPluginSystem/pull/76
+         */
+
+        // Avoid when inside WUPS config menu.
+        BOOL isMenuOpen = false;
+        WUPSConfigAPI_GetMenuOpen(&isMenuOpen);
+        if (isMenuOpen)
+            goto real_function;
+#endif
+
+        // Avoid when not inside the Wii U Menu.
         const std::uint64_t wii_u_menu_id = 0x0005001010040000;
         const std::uint64_t region_mask   = 0xfffffffffffffcff;
         const std::uint64_t title = OSGetTitleID();
         if ((title & region_mask) != wii_u_menu_id)
             goto real_function;
 
-        // Extra check: don't use it on the software keyboard.
+        // Avoid when using the on-screen keyboard inside the Wii U Menu.
         OSThread* th_id = OSGetCurrentThread();
         const char* th_name = OSGetThreadName(th_id);
         if (th_name && !strcmp("MenSwkbdCalculator_Create", th_name))
