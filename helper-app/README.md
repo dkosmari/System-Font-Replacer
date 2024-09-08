@@ -17,9 +17,9 @@ With it you can:
 
 2. Run this app by tapping on the **System Font Replacer Helper** icon.
 
-3. When prompted, press "**A**" to process all the `.bps` patches found.
+3. When prompted, press **A** to process all the `.bps` patches found.
 
-4. At the end, press the "**HOME**" button and close the app.
+4. At the end, press the **HOME** button and close the app.
 
 5. Open the WUPS menu (**L + ↓ + SELECT**) and navigate to the **System Font Replacer**
    menu.
@@ -33,9 +33,9 @@ With it you can:
 
 1. Run this app, by tapping on the **System Font Replacer Helper** icon.
 
-2. When prompted, press "**Y**" to export the system fonts.
+2. When prompted, press **Y** to export the system fonts.
 
-3. At the end, press the "**HOME**" button and close the app.
+3. At the end, press the **HOME** button and close the app.
 
 The system fonts (`CafeCn.ttf`, `CafeKr.ttf`, `CafeStd.ttf`, `CafeTw.ttf`) are now copied
 to `SD:/wiiu/fonts/`.
