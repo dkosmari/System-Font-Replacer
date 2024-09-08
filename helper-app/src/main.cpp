@@ -15,6 +15,7 @@
 #include <iostream>
 #include <map>
 #include <optional>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -43,8 +44,16 @@ using namespace std::literals;
 using std::filesystem::path;
 using std::cout;
 using std::endl;
+using std::uint32_t;
 
 using blob_t = std::vector<std::byte>;
+
+
+struct font_info {
+    uint32_t ref_crc = 0;
+    std::string name;
+    blob_t content;
+};
 
 
 struct guard_base {
@@ -158,9 +167,9 @@ namespace whb {
         void
         set_color(std::uint8_t r, std::uint8_t g, std::uint8_t b)
         {
-            std::uint32_t color = std::uint32_t{r} << 24 |
-                                  std::uint32_t{g} << 16 |
-                                  std::uint32_t{b} << 8;
+            uint32_t color = uint32_t{r} << 24 |
+                             uint32_t{g} << 16 |
+                             uint32_t{b} << 8;
             WHBLogConsoleSetColor(color);
         }
 
@@ -213,7 +222,6 @@ enum class Stage {
     Apply,
 
 };
-
 
 
 ssize_t
@@ -297,7 +305,7 @@ save_file(const path& file_path, const blob_t& data)
 }
 
 
-std::uint32_t
+uint32_t
 wait_button_press()
 {
     const auto mask = VPAD_BUTTON_A    | VPAD_BUTTON_B |
@@ -321,7 +329,7 @@ wait_button_press()
 
 blob_t
 apply_patch(const blob_t& bps_patch,
-            const std::map<std::uint32_t, blob_t>& sources)
+            const std::map<uint32_t, font_info>& sources)
 {
     blob_t result;
 
@@ -333,7 +341,74 @@ apply_patch(const blob_t& bps_patch,
 
     const auto& src = src_iter->second;
 
-    return bps::apply(bps_patch, src);
+    return bps::apply(bps_patch, src.content);
+}
+
+
+const path sd_fonts_path = "fs:/vol/external01/wiiu/fonts";
+
+
+void
+generate_custom_fonts(const std::map<uint32_t, font_info>& cafe_fonts)
+{
+    std::vector<path> patch_paths;
+    for (const auto& entry : std::filesystem::directory_iterator{sd_fonts_path}) {
+        if (!entry.is_regular_file())
+            continue;
+        if (has_extension(entry, ".bps"))
+            patch_paths.push_back(entry.path());
+    }
+    cout << "Generating fonts..." << endl;
+    for (const auto& patch_path : patch_paths) {
+        try {
+            path output_path = patch_path;
+            output_path.replace_extension(".ttf");
+            if (exists(output_path)) {
+                cout << "Skipped: "
+                     << output_path.filename()
+                     << " already exists."
+                     << endl;
+                continue;
+            }
+
+            blob_t patch = load_file(patch_path);
+            cout << "Processing " << patch_path.filename() << endl;
+            blob_t output = apply_patch(patch, cafe_fonts);
+            save_file(output_path, output);
+            cout << "Saved " << output_path.filename() << endl;
+        }
+        catch (std::exception& e) {
+            cout << "Error with " << patch_path.filename() << "\n"
+                 << e.what()
+                 << endl;
+        }
+    }
+}
+
+
+void
+export_system_fonts(const std::map<uint32_t, font_info>& cafe_fonts)
+{
+    cout << "Exporting system fonts..." << endl;
+    for (auto [crc, info] : cafe_fonts) {
+        try {
+            path out_path = sd_fonts_path / info.name;
+            if (exists(out_path)) {
+                cout << "Skipped " << info.name << ": already exists" << endl;
+                continue;
+            }
+            save_file(out_path, info.content);
+            cout << "Exported " << info.name;
+            if (crc != info.ref_crc)
+                cout << " (wrong crc32)";
+            cout << endl;
+        }
+        catch (std::exception& e) {
+            cout << "Error with " << info.name << "\n"
+                 << e.what()
+                 << endl;
+        }
+    }
 }
 
 
@@ -350,89 +425,71 @@ int main()
 
     try {
         // Look up system fonts by crc32.
-        std::map<std::uint32_t, blob_t> cafe_fonts;
-
+        std::map<uint32_t, font_info> cafe_fonts;
         {
             mocha::init_guard mocha_init;
             mocha::mount_guard mount_mlc_guard{"storage_mlc", {}, "/vol/storage_mlc01"};
 
+            const auto cafe_names = {
+                "CafeCn.ttf",
+                "CafeKr.ttf",
+                "CafeStd.ttf",
+                "CafeTw.ttf",
+            };
+            const auto cafe_crcs = {
+                0X14c7272fu, // CafeCn.ttf
+                0Xa2a1a55au, // CafeKr.ttf
+                0Xf1252709u, // CafeStd.ttf
+                0Xe5a938cdu, // CafeTw.ttf
+            };
             const path cafe_base_path = "storage_mlc:/sys/title/0005001b/10042400/content";
-            for (auto cafe_name : {"CafeCn.ttf", "CafeKr.ttf", "CafeStd.ttf", "CafeTw.ttf"}) {
-                path cafe_font_path = cafe_base_path / cafe_name;
+            for (auto [name, ref_crc] : std::views::zip(cafe_names, cafe_crcs)) {
+                path cafe_font_path = cafe_base_path / name;
                 try {
-                    blob_t cafe_font = load_file(cafe_font_path);
-                    auto crc32 = calc_crc32(cafe_font);
+                    blob_t content = load_file(cafe_font_path);
+                    auto real_crc = calc_crc32(content);
+                    const char* crc_match = real_crc == ref_crc ? "OK" : "wrong crc32";
                     cout << "Loaded "
-                         << std::setw(7) << cafe_name << ": crc32 = "
-                         << std::hex << std::setw(8) << std::setfill('0')
-                         << crc32
-                         << std::dec
+                         << std::setw(7) << name
+                         << " (" << crc_match << ")"
                          << endl;
-                    cafe_fonts[crc32] = std::move(cafe_font);
+                    auto& info = cafe_fonts[real_crc];
+                    info.ref_crc = ref_crc;
+                    info.name    = name;
+                    info.content = std::move(content);
                 }
                 catch (std::exception& e) {
-                    cout << "Error with \"" << cafe_name << ":\n"
+                    cout << "Error with \"" << name << "\":\n"
                          << e.what()
                          << endl;
                 }
             }
         }
 
-        const path sd_fonts_path = "fs:/vol/external01/wiiu/fonts";
         if (!exists(sd_fonts_path))
-            throw std::runtime_error{"\"wiiu/fonts/\" not found in SD card!"};
+            throw std::runtime_error{"\"SD:/wiiu/fonts/\" not found!"};
 
-
-        std::vector<path> patch_paths;
-        for (const auto& entry : std::filesystem::directory_iterator{sd_fonts_path}) {
-            if (!entry.is_regular_file())
-                continue;
-            if (has_extension(entry, ".bps"))
-                patch_paths.push_back(entry.path());
-        }
-
-        cout << "\nBPS patches found: " << patch_paths.size() << ".\n"
-             << endl;
-
-        cout << "Press A to generate fonts from .bps patches...\n"
-             << "...or any other button to cancel."
+        cout << "\nWaiting for user input:\n"
+             << "  - press A button to generate fonts.\n"
+             << "  - press Y button to export the system fonts.\n"
+             << "  - press any other button to exit."
              << endl;
         cout << "\n**This safe, it will NOT modify your NAND.**" << endl;
 
         auto btn = wait_button_press();
-        if ((btn & VPAD_BUTTON_A) == 0)
+
+        switch (btn) {
+        case VPAD_BUTTON_A:
+            generate_custom_fonts(cafe_fonts);
+            break;
+        case VPAD_BUTTON_Y:
+            export_system_fonts(cafe_fonts);
+            break;
+        default:
             throw std::runtime_error{"Canceled by user."};
-
-        cout << "\nGenerating fonts..." << endl;
-        unsigned num_errors = 0;
-        for (const auto& patch_path : patch_paths) {
-            try {
-                path output_path = patch_path;
-                output_path.replace_extension(".ttf");
-                if (exists(output_path)) {
-                    cout << "Skipped: "
-                         << output_path.filename()
-                         << " already exists."
-                         << endl;
-                    continue;
-                }
-
-                blob_t patch = load_file(patch_path);
-                cout << "Processing " << patch_path.filename() << endl;
-                blob_t output = apply_patch(patch, cafe_fonts);
-                save_file(output_path, output);
-                cout << "Saved " << output_path.filename() << endl;
-            }
-            catch (std::exception& e) {
-                cout << "Error in " << patch_path.filename() << "\n"
-                     << "WHAT="
-                     << e.what()
-                     << endl;
-                ++num_errors;
-            }
         }
 
-        cout << "Finished." << "\n\n"
+        cout << "\nFinished." << "\n"
              << "Press HOME and close this app." << endl;
 
         while (proc.is_running())
@@ -443,7 +500,7 @@ int main()
         cout << "Quitting..." << endl;
     }
     catch (std::exception& e) {
-        cout << "ERROR:\n"
+        cout << "ERROR!\n"
              << e.what() << "\n\n"
              << "Press HOME and close this app."
              << endl;
