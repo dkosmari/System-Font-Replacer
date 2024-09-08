@@ -19,15 +19,14 @@
 #include <coreinit/thread.h>
 #include <coreinit/title.h>
 #include <sysapp/switch.h>
-#include <whb/log.h>
-#include <whb/log_module.h>
-#include <whb/log_udp.h>
 
 #include <wups.h>
 
 #include <wupsxx/bool_item.hpp>
 #include <wupsxx/category.hpp>
 #include <wupsxx/file_item.hpp>
+#include <wupsxx/init.hpp>
+#include <wupsxx/logger.hpp>
 #include <wupsxx/storage.hpp>
 #include <wupsxx/text_item.hpp>
 
@@ -40,6 +39,9 @@ using blob_t = std::vector<char>;
 using std::filesystem::path;
 
 
+namespace logger = wups::logger;
+
+
 WUPS_PLUGIN_NAME(PACKAGE_NAME);
 WUPS_PLUGIN_DESCRIPTION("Redirect the system font to a custom font on the SD card.");
 WUPS_PLUGIN_VERSION(PACKAGE_VERSION);
@@ -48,43 +50,6 @@ WUPS_PLUGIN_LICENSE("GPLv3");
 
 WUPS_USE_WUT_DEVOPTAB();
 WUPS_USE_STORAGE(PACKAGE_TARNAME);
-
-
-struct log_manager {
-
-    bool module_init = false;
-    bool udp_init = false;
-
-
-    log_manager()
-    {
-        // Note: only use UDP if Logging Module failed to init.
-        if (!(module_init = WHBLogModuleInit()))
-            udp_init = WHBLogUdpInit();
-    }
-
-
-    ~log_manager()
-    {
-        if (module_init)
-            WHBLogModuleDeinit();
-        if (udp_init)
-            WHBLogUdpDeinit();
-    }
-
-};
-
-
-// This is alive between application start and end hooks.
-std::optional<log_manager> app_log_mgr;
-
-
-#define LOG(msg, ...)                                           \
-    WHBLogPrintf("[" PACKAGE_TARNAME "] %s:%d/%s(): " msg,      \
-                 __FILE__,                                      \
-                 __LINE__,                                      \
-                 __func__,                                      \
-                 __VA_ARGS__)
 
 
 blob_t font_cn;
@@ -137,7 +102,7 @@ namespace cfg {
 #undef LOAD
         }
         catch (std::exception& e) {
-            LOG("exception caugt: %s\n", e.what());
+            logger::printf("exception caught: %s\n", e.what());
         }
     }
 
@@ -157,7 +122,7 @@ namespace cfg {
             wups::storage::save();
         }
         catch (std::exception& e) {
-            LOG("exception caught: %s\n", e.what());
+            logger::printf("exception caught: %s\n", e.what());
         }
     }
 
@@ -165,70 +130,56 @@ namespace cfg {
 } // namespace cfg
 
 
-WUPSConfigAPICallbackStatus
-menu_open(WUPSConfigCategoryHandle root_handle)
+void
+menu_open(wups::config::category& root)
 {
-    try {
+    logger::guard guard{PACKAGE_NAME};
+    root.add(wups::config::text_item::create("NOTE: Changes might NOT take effect until the next boot."));
 
-        wups::config::category root{root_handle};
+    root.add(wups::config::bool_item::create(cfg::labels::enabled,
+                                             cfg::enabled,
+                                             cfg::defaults::enabled,
+                                             "yes", "no"));
 
-        root.add(wups::config::text_item::create("NOTE: Changes might NOT take effect until the next boot."));
+    root.add(wups::config::file_item::create(cfg::labels::path_std,
+                                             cfg::path_std,
+                                             cfg::defaults::path_std,
+                                             40,
+                                             {".ttf"}));
 
-        root.add(wups::config::bool_item::create(cfg::labels::enabled,
-                                                 cfg::enabled,
-                                                 cfg::defaults::enabled,
-                                                 "yes", "no"));
+    root.add(wups::config::file_item::create(cfg::labels::path_cn,
+                                             cfg::path_cn,
+                                             cfg::defaults::path_cn,
+                                             40,
+                                             {".ttf"}));
 
-        root.add(wups::config::file_item::create(cfg::labels::path_std,
-                                                 cfg::path_std,
-                                                 cfg::defaults::path_std,
-                                                 40,
-                                                 {".ttf"}));
+    root.add(wups::config::file_item::create(cfg::labels::path_kr,
+                                             cfg::path_kr,
+                                             cfg::defaults::path_kr,
+                                             40,
+                                             {".ttf"}));
 
-        root.add(wups::config::file_item::create(cfg::labels::path_cn,
-                                                 cfg::path_cn,
-                                                 cfg::defaults::path_cn,
-                                                 40,
-                                                 {".ttf"}));
+    root.add(wups::config::file_item::create(cfg::labels::path_tw,
+                                             cfg::path_tw,
+                                             cfg::defaults::path_tw,
+                                             40,
+                                             {".ttf"}));
 
-        root.add(wups::config::file_item::create(cfg::labels::path_kr,
-                                                 cfg::path_kr,
-                                                 cfg::defaults::path_kr,
-                                                 40,
-                                                 {".ttf"}));
+    root.add(wups::config::bool_item::create(cfg::labels::only_menu,
+                                             cfg::only_menu,
+                                             cfg::defaults::only_menu,
+                                             "yes", "no"));
 
-        root.add(wups::config::file_item::create(cfg::labels::path_tw,
-                                                 cfg::path_tw,
-                                                 cfg::defaults::path_tw,
-                                                 40,
-                                                 {".ttf"}));
-
-        root.add(wups::config::bool_item::create(cfg::labels::only_menu,
-                                                 cfg::only_menu,
-                                                 cfg::defaults::only_menu,
-                                                 "yes", "no"));
-
-        root.add(wups::config::text_item::create("Website",
-                                                 PACKAGE_URL));
-
-        return WUPSCONFIG_API_CALLBACK_RESULT_SUCCESS;
-    }
-    catch (std::exception& e) {
-        LOG("exception caught: %s\n", e.what());
-        return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
-    }
+    root.add(wups::config::text_item::create("Website",
+                                             PACKAGE_URL));
 }
 
 
 void
 menu_close()
 {
-    try {
-        cfg::save();
-    }
-    catch (std::exception& e) {
-        LOG("exception caught: %s\n", e.what());
-    }
+    logger::guard guard{PACKAGE_NAME};
+    cfg::save();
 }
 
 
@@ -273,8 +224,8 @@ try_load_font(const path& font_path)
     catch (std::exception& e) {
         if (f)
             std::fclose(f);
-        LOG("failed to load font file \"%s\": %s\n",
-            font_path.c_str(), e.what());
+        logger::printf("failed to load font file \"%s\": %s\n",
+                       font_path.c_str(), e.what());
         return {};
     }
 }
@@ -282,44 +233,30 @@ try_load_font(const path& font_path)
 
 INITIALIZE_PLUGIN()
 {
-    log_manager log_guard;
+    logger::guard guard{PACKAGE_NAME};
 
-    WUPSConfigAPIOptionsV1 options{ .name = PACKAGE_NAME };
-    auto status = WUPSConfigAPI_Init(options, menu_open, menu_close);
-    if (status != WUPSCONFIG_API_RESULT_SUCCESS) {
-        LOG("WUPSConfigAPI_Init() failed: %s\n", WUPSConfigAPI_GetStatusStr(status));
-        return;
+    try {
+        wups::config::init(PACKAGE_NAME, menu_open, menu_close);
+        cfg::load();
+
+        if (!cfg::enabled)
+            return;
+
+        if (auto font = try_load_font(cfg::path_cn))
+            font_cn = std::move(*font);
+
+        if (auto font = try_load_font(cfg::path_kr))
+            font_kr = std::move(*font);
+
+        if (auto font = try_load_font(cfg::path_std))
+            font_std = std::move(*font);
+
+        if (auto font = try_load_font(cfg::path_tw))
+            font_tw = std::move(*font);
     }
-
-    cfg::load();
-
-    if (!cfg::enabled)
-        return;
-
-    if (auto font = try_load_font(cfg::path_cn))
-        font_cn = std::move(*font);
-
-    if (auto font = try_load_font(cfg::path_kr))
-        font_kr = std::move(*font);
-
-    if (auto font = try_load_font(cfg::path_std))
-        font_std = std::move(*font);
-
-    if (auto font = try_load_font(cfg::path_tw))
-        font_tw = std::move(*font);
-
-}
-
-
-ON_APPLICATION_START()
-{
-    app_log_mgr.emplace();
-}
-
-
-ON_APPLICATION_ENDS()
-{
-    app_log_mgr.reset();
+    catch (std::exception& e) {
+        logger::printf("ERROR: %s\n", e.what());
+    }
 }
 
 
