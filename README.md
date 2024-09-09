@@ -32,8 +32,7 @@ them in `SD:/wiiu/fonts/`; that's the default location the plugin looks for font
    Note that, if you select a directory (like the default, `SD:/wiiu/fonts`) the font will
    not be replaced, and the original system font is used instead.
 
-4. Exit the plugin menu. If you open it again, you can immediately check if the new font
-   got loaded or not.
+4. Exit the plugin menu.
 
 5. Reboot your Wii U.
 
