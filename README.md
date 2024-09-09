@@ -66,9 +66,8 @@ uses the [FontForge](https://fontforge.org/) program to do that automatically, c
 PUA block (and any other missing symbol) from the original system font into your custom
 font.
 
-1. Start by getting a copy of the original system fonts on your Wii U, from
-   `/storage_mlc/sys/title/0005001b/10042400/content` using
-   [ftpiiu](https://github.com/wiiu-env/ftpiiu_plugin).
+1. Start by getting a copy of the original system fonts on your Wii U. The [System Font
+   Replacer Helper](helper-app) can do that for you, with a single button press.
 
 2. Assuming the font you want to use on your Wii U is called `myfont.ttf`, and you want to
    use it as the "Std Font" font (replacing `CafeStd.ttf`), you can execute the script
