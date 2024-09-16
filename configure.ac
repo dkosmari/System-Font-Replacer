@@ -12,7 +12,6 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([build-aux])
 
-
 WIIU_WUPS_INIT
 
 AM_INIT_AUTOMAKE([foreign subdir-objects])
@@ -21,9 +20,9 @@ AC_PROG_CXX
 AX_APPEND_COMPILE_FLAGS([-std=c++23], [CXX])
 AC_LANG([C++])
 
+AC_CONFIG_FILES([Makefile])
+
 AC_CONFIG_SUBDIRS([external/libwupsxx
                    helper-app])
 
-AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
-
