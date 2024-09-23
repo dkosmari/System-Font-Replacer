@@ -29,7 +29,7 @@ the plugin configuration.
 
 1. Run the app, by tapping on the **System Font Replacer Helper** icon.
 
-2. When prompted, press **Y** to export the system fonts.
+2. When prompted, press **+** to export the system fonts.
 
 3. At the end, press the **HOME** button and close the app.
 
