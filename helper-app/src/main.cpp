@@ -381,7 +381,7 @@ wait_for_action_button()
                     if (buf.pro.trigger & mask)
                         return static_cast<WPADProButton>(buf.pro.trigger & mask);
                 }
-                break;
+                continue; // skip processing core buttons
             }
 
             const auto mask = WPAD_BUTTON_A    | WPAD_BUTTON_B     |
@@ -494,6 +494,8 @@ int main()
     whb::log_module log_guard;
     whb::proc proc;
     whb::console console;
+
+    WPADEnableURCC(true);
 
     console.set_color(80, 32, 0);
 
