@@ -19,16 +19,18 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <variant>
 #include <vector>
 
 #include <sys/iosupport.h>
 
+#include <padscore/kpad.h>
+#include <sysapp/launch.h>
 #include <vpad/input.h>
 #include <whb/log.h>
 #include <whb/log_console.h>
 #include <whb/log_module.h>
 #include <whb/proc.h>
-#include <sysapp/launch.h>
 
 #include <mocha/mocha.h>
 
@@ -214,6 +216,15 @@ namespace whb {
 } // namespace whb
 
 
+struct kpad {
+    kpad() noexcept
+    { KPADInit(); }
+
+    ~kpad()
+    { KPADShutdown(); }
+};
+
+
 enum class Stage {
 
     Mounting,
@@ -305,22 +316,81 @@ save_file(const path& file_path, const blob_t& data)
 }
 
 
-uint32_t
-wait_button_press()
+
+using any_button_t = std::variant<VPADButtons,
+                                  WPADButton,
+                                  WPADNunchukButton,
+                                  WPADClassicButton,
+                                  WPADProButton>;
+
+any_button_t
+wait_for_action_button()
 {
-    const auto mask = VPAD_BUTTON_A    | VPAD_BUTTON_B |
-                      VPAD_BUTTON_X    | VPAD_BUTTON_Y |
-                      VPAD_BUTTON_L    | VPAD_BUTTON_R |
-                      VPAD_BUTTON_ZL   | VPAD_BUTTON_ZR |
-                      VPAD_BUTTON_PLUS | VPAD_BUTTON_MINUS;
 
     while (whb::proc::is_running()) {
-        VPADStatus buf;
-        int r = VPADRead(VPAD_CHAN_0, &buf, 1, nullptr);
-        if (r == 1) {
+
+        for (auto channel : {VPAD_CHAN_0, VPAD_CHAN_1}) {
+            const auto mask = VPAD_BUTTON_A    | VPAD_BUTTON_B     |
+                              VPAD_BUTTON_X    | VPAD_BUTTON_Y     |
+                              VPAD_BUTTON_L    | VPAD_BUTTON_R     |
+                              VPAD_BUTTON_ZL   | VPAD_BUTTON_ZR    |
+                              VPAD_BUTTON_PLUS | VPAD_BUTTON_MINUS;
+            VPADStatus buf;
+            int r = VPADRead(channel, &buf, 1, nullptr);
+            if (r != 1)
+                continue;
             if (buf.trigger & mask)
-                return buf.trigger;
+                return static_cast<VPADButtons>(buf.trigger & mask);
         }
+
+        for (int channel = 0; channel < 7; ++channel) {
+            KPADStatus buf;
+            int r = KPADRead(static_cast<KPADChan>(channel), &buf, 1);
+            if (r != 1)
+                continue;
+            if (buf.error)
+                continue;
+            switch (buf.extensionType) {
+            case WPAD_EXT_NUNCHUK:
+            case WPAD_EXT_MPLUS_NUNCHUK:
+                {
+                    const auto mask = WPAD_NUNCHUK_BUTTON_Z | WPAD_NUNCHUK_BUTTON_C;
+                    if (buf.nunchuk.trigger & mask)
+                        return static_cast<WPADNunchukButton>(buf.nunchuk.trigger & mask);
+                }
+                break;
+            case WPAD_EXT_CLASSIC:
+            case WPAD_EXT_MPLUS_CLASSIC:
+                {
+                    const auto mask = WPAD_CLASSIC_BUTTON_A    | WPAD_CLASSIC_BUTTON_B     |
+                                      WPAD_CLASSIC_BUTTON_X    | WPAD_CLASSIC_BUTTON_Y     |
+                                      WPAD_CLASSIC_BUTTON_L    | WPAD_CLASSIC_BUTTON_R     |
+                                      WPAD_CLASSIC_BUTTON_ZL   | WPAD_CLASSIC_BUTTON_ZR    |
+                                      WPAD_CLASSIC_BUTTON_PLUS | WPAD_CLASSIC_BUTTON_MINUS;
+                    if (buf.classic.trigger & mask)
+                        return static_cast<WPADClassicButton>(buf.classic.trigger & mask);
+                }
+                break;
+            case WPAD_EXT_PRO_CONTROLLER:
+                {
+                    const auto mask = WPAD_PRO_BUTTON_A    | WPAD_PRO_BUTTON_B     |
+                                      WPAD_PRO_BUTTON_X    | WPAD_PRO_BUTTON_Y     |
+                                      WPAD_PRO_TRIGGER_L   | WPAD_PRO_TRIGGER_R    |
+                                      WPAD_PRO_TRIGGER_ZL  | WPAD_PRO_TRIGGER_ZR   |
+                                      WPAD_PRO_BUTTON_PLUS | WPAD_PRO_BUTTON_MINUS;
+                    if (buf.pro.trigger & mask)
+                        return static_cast<WPADProButton>(buf.pro.trigger & mask);
+                }
+                break;
+            }
+
+            const auto mask = WPAD_BUTTON_A    | WPAD_BUTTON_B     |
+                              WPAD_BUTTON_1    | WPAD_BUTTON_2     |
+                              WPAD_BUTTON_PLUS | WPAD_BUTTON_MINUS;
+            if (buf.trigger & mask)
+                return static_cast<WPADButton>(buf.trigger & mask);
+        }
+
         whb::console::draw();
     }
     throw whb::proc::quit{};
@@ -412,8 +482,15 @@ export_system_fonts(const std::map<uint32_t, font_info>& cafe_fonts)
 }
 
 
+template<typename... Ts>
+struct overloaded : Ts... {
+    using Ts::operator() ...;
+};
+
+
 int main()
 {
+    kpad kpad_guard;
     whb::log_module log_guard;
     whb::proc proc;
     whb::console console;
@@ -471,23 +548,71 @@ int main()
 
         cout << "\nWaiting for user input:\n"
              << "  - press A button to generate fonts.\n"
-             << "  - press Y button to export the system fonts.\n"
+             << "  - press + button to export the system fonts.\n"
              << "  - press any other button to exit."
              << endl;
         cout << "\n**This safe, it will NOT modify your NAND.**" << endl;
 
-        auto btn = wait_button_press();
+        auto btn = wait_for_action_button();
 
-        switch (btn) {
-        case VPAD_BUTTON_A:
-            generate_custom_fonts(cafe_fonts);
-            break;
-        case VPAD_BUTTON_Y:
-            export_system_fonts(cafe_fonts);
-            break;
-        default:
+        auto handle_vpad = [&cafe_fonts](VPADButtons btn)
+        {
+            if (btn & VPAD_BUTTON_A) {
+                generate_custom_fonts(cafe_fonts);
+                return;
+            }
+            if (btn & VPAD_BUTTON_PLUS) {
+                export_system_fonts(cafe_fonts);
+                return;
+            }
             throw std::runtime_error{"Canceled by user."};
-        }
+        };
+        auto handle_wpad = [&cafe_fonts](WPADButton btn)
+        {
+            if (btn & WPAD_BUTTON_A) {
+                generate_custom_fonts(cafe_fonts);
+                return;
+            }
+            if (btn & WPAD_BUTTON_PLUS) {
+                export_system_fonts(cafe_fonts);
+                return;
+            }
+            throw std::runtime_error{"Canceled by user."};
+        };
+        auto handle_wpad_nunchuk = [&cafe_fonts](WPADNunchukButton)
+        {
+            throw std::runtime_error{"Canceled by user."};
+        };
+        auto handle_wpad_classic = [&cafe_fonts](WPADClassicButton btn)
+        {
+            if (btn & WPAD_CLASSIC_BUTTON_A) {
+                generate_custom_fonts(cafe_fonts);
+                return;
+            }
+            if (btn & WPAD_CLASSIC_BUTTON_PLUS) {
+                export_system_fonts(cafe_fonts);
+                return;
+            }
+            throw std::runtime_error{"Canceled by user."};
+        };
+        auto handle_wpad_pro = [&cafe_fonts](WPADProButton btn)
+        {
+            if (btn & WPAD_PRO_BUTTON_A) {
+                generate_custom_fonts(cafe_fonts);
+                return;
+            }
+            if (btn & WPAD_PRO_BUTTON_PLUS) {
+                export_system_fonts(cafe_fonts);
+                return;
+            }
+            throw std::runtime_error{"Canceled by user."};
+        };
+        visit(overloaded{handle_vpad,
+                         handle_wpad,
+                         handle_wpad_nunchuk,
+                         handle_wpad_classic,
+                         handle_wpad_pro},
+            btn);
 
         cout << "\nFinished." << "\n"
              << "Press HOME and close this app." << endl;
@@ -500,7 +625,7 @@ int main()
         cout << "Quitting..." << endl;
     }
     catch (std::exception& e) {
-        cout << "ERROR!\n"
+        cout << "\nERROR!\n"
              << e.what() << "\n\n"
              << "Press HOME and close this app."
              << endl;
@@ -508,5 +633,4 @@ int main()
         while (proc.is_running())
             console.draw();
     }
-
 }
