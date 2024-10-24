@@ -31,6 +31,7 @@
 #include <whb/log_console.h>
 #include <whb/log_module.h>
 #include <whb/proc.h>
+#include <whb/sdcard.h>
 
 #include <mocha/mocha.h>
 
@@ -43,10 +44,13 @@
 
 
 using namespace std::literals;
-using std::filesystem::path;
+
 using std::cout;
 using std::endl;
+using std::filesystem::path;
+using std::runtime_error;
 using std::uint32_t;
+
 
 using blob_t = std::vector<std::byte>;
 
@@ -71,10 +75,10 @@ struct guard_base {
 
 namespace mocha {
 
-    struct error : std::runtime_error {
+    struct error : runtime_error {
 
         error(MochaUtilsStatus status) :
-            std::runtime_error{Mocha_GetStatusStr(status)}
+            runtime_error{Mocha_GetStatusStr(status)}
         {}
 
     };
@@ -213,6 +217,22 @@ namespace whb {
 
     };
 
+
+    struct sd_mount : guard_base {
+
+        sd_mount()
+        {
+            valid = WHBMountSdCard();
+        }
+
+        ~sd_mount()
+        {
+            if (valid)
+                WHBUnmountSdCard();
+        }
+
+    };
+
 } // namespace whb
 
 
@@ -288,14 +308,14 @@ load_file(const path& file_path)
 
     std::filebuf fb;
     if (!fb.open(file_path, std::ios::in | std::ios::binary))
-        throw std::runtime_error{"unable to open for reading"};
+        throw runtime_error{"unable to open for reading"};
 
     blob_t result(size);
     auto read = fb.sgetn(reinterpret_cast<char*>(result.data()), result.size());
     if (read <= 0)
-        throw std::runtime_error{"error reading file"};
+        throw runtime_error{"error reading file"};
     if (static_cast<std::uintmax_t>(read) != size)
-        throw std::runtime_error{"unable to read all data"};
+        throw runtime_error{"unable to read all data"};
 
     return result;
 }
@@ -306,13 +326,13 @@ save_file(const path& file_path, const blob_t& data)
 {
     std::filebuf fb;
     if (!fb.open(file_path, std::ios::out | std::ios::binary))
-        throw std::runtime_error{"unable to open for writing"};
+        throw runtime_error{"unable to open for writing"};
 
     auto written = fb.sputn(reinterpret_cast<const char*>(data.data()), data.size());
     if (written <= 0)
-        throw std::runtime_error{"error writing file"};
+        throw runtime_error{"error writing file"};
     if (static_cast<blob_t::size_type>(written) != data.size())
-        throw std::runtime_error{"unable to write all data"};
+        throw runtime_error{"unable to write all data"};
 }
 
 
@@ -407,7 +427,7 @@ apply_patch(const blob_t& bps_patch,
 
     auto src_iter = sources.find(info.crc_in);
     if (src_iter == sources.end())
-        throw std::runtime_error{"BPS patch in_crc does not match any source."};
+        throw runtime_error{"BPS patch in_crc does not match any source."};
 
     const auto& src = src_iter->second;
 
@@ -494,6 +514,7 @@ int main()
     whb::log_module log_guard;
     whb::proc proc;
     whb::console console;
+    whb::sd_mount sd_guard;
 
     WPADEnableURCC(true);
 
@@ -503,6 +524,9 @@ int main()
     cout << PACKAGE_URL << endl;
 
     try {
+        if (!sd_guard)
+            throw runtime_error{"Failed to mount SD card."};
+
         // Look up system fonts by crc32.
         std::map<uint32_t, font_info> cafe_fonts;
         {
@@ -546,7 +570,7 @@ int main()
         }
 
         if (!exists(sd_fonts_path))
-            throw std::runtime_error{"\"SD:/wiiu/fonts/\" not found!"};
+            throw runtime_error{"\"SD:/wiiu/fonts/\" not found!"};
 
         cout << "\nWaiting for user input:\n"
              << "  - press A button to generate fonts.\n"
@@ -567,7 +591,7 @@ int main()
                 export_system_fonts(cafe_fonts);
                 return;
             }
-            throw std::runtime_error{"Canceled by user."};
+            throw runtime_error{"Canceled by user."};
         };
         auto handle_wpad = [&cafe_fonts](WPADButton btn)
         {
@@ -579,11 +603,11 @@ int main()
                 export_system_fonts(cafe_fonts);
                 return;
             }
-            throw std::runtime_error{"Canceled by user."};
+            throw runtime_error{"Canceled by user."};
         };
         auto handle_wpad_nunchuk = [&cafe_fonts](WPADNunchukButton)
         {
-            throw std::runtime_error{"Canceled by user."};
+            throw runtime_error{"Canceled by user."};
         };
         auto handle_wpad_classic = [&cafe_fonts](WPADClassicButton btn)
         {
@@ -595,7 +619,7 @@ int main()
                 export_system_fonts(cafe_fonts);
                 return;
             }
-            throw std::runtime_error{"Canceled by user."};
+            throw runtime_error{"Canceled by user."};
         };
         auto handle_wpad_pro = [&cafe_fonts](WPADProButton btn)
         {
@@ -607,7 +631,7 @@ int main()
                 export_system_fonts(cafe_fonts);
                 return;
             }
-            throw std::runtime_error{"Canceled by user."};
+            throw runtime_error{"Canceled by user."};
         };
         visit(overloaded{handle_vpad,
                          handle_wpad,

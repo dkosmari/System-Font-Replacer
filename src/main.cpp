@@ -36,8 +36,9 @@
 
 
 using blob_t = std::vector<char>;
-using std::filesystem::path;
 
+using std::filesystem::path;
+using std::runtime_error;
 
 namespace logger = wups::logger;
 
@@ -195,26 +196,26 @@ try_load_font(const path& font_path)
         auto size = file_size(font_path);
         // too small file is probably a mistake; corrupted FS or broken FTP transfer
         if (size < 8)
-            throw std::runtime_error{"font file size is too small!"};
+            throw runtime_error{"font file size is too small!"};
 
         f = std::fopen(font_path.c_str(), "rb");
         if (!f)
-            throw std::runtime_error{"cannot open \"" + font_path.string() + "\""};
+            throw runtime_error{"cannot open \"" + font_path.string() + "\"!"};
 
         const char ttf_magic[4] = {0x00, 0x01, 0x00, 0x00};
         char file_magic[4];
         auto res = std::fread(file_magic, 1, 4, f);
         if (res != 4)
-            throw std::runtime_error{"cannot read TTF magic!"};
+            throw runtime_error{"cannot read TTF magic!"};
         if (std::memcmp(ttf_magic, file_magic, 4))
-            throw std::runtime_error{"no TTF magic in font file!"};
+            throw runtime_error{"no TTF magic in font file!"};
 
         std::rewind(f);
 
         blob_t content(size);
         res = std::fread(content.data(), 1, size, f);
         if (static_cast<std::uintmax_t>(res) != size)
-            throw std::runtime_error{"could not load entire font file"};
+            throw runtime_error{"could not load entire font file!"};
 
         std::fclose(f);
         f = nullptr;
@@ -224,7 +225,7 @@ try_load_font(const path& font_path)
     catch (std::exception& e) {
         if (f)
             std::fclose(f);
-        logger::printf("failed to load font file \"%s\": %s\n",
+        logger::printf("Failed to load font file \"%s\": %s\n",
                        font_path.c_str(), e.what());
         return {};
     }
