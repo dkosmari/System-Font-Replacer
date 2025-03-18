@@ -8,7 +8,7 @@
 # any medium without royalty provided the copyright notice and this notice are
 # preserved. This file is offered as-is, without any warranty.
 
-#serial 2
+#serial 3
 
 # DEVKITPRO_WUT_INIT
 # ------------------
@@ -80,7 +80,9 @@ AC_DEFUN([DEVKITPRO_WUT_INIT],[
                             [wut.h],
                             [wut],
                             [],
-                            [AC_MSG_ERROR([wut not found in $DEVKITPRO; install the package with "dkp-pacman -S wut"])])
+                            [],
+                            [AC_MSG_ERROR([wut not found in $DEVKITPRO; install the package with "dkp-pacman -S wut"])]
+                           )
 
 
     # set DEVKITPRO_RPL_LDFLAGS
@@ -117,7 +119,9 @@ AC_DEFUN([DEVKITPRO_WUT_CHECK_LIBMOCHA],[
     DEVKITPRO_CHECK_LIBRARY([DEVKITPRO_WUT_LIBMOCHA],
                             [mocha/mocha.h],
                             [mocha],
+                            [],
                             [$1],
                             m4_default([$2],
-                                       [AC_MSG_ERROR([libmocha not found; get it from https://github.com/wiiu-env/libmocha])]))
+                                       [AC_MSG_ERROR([libmocha not found; get it from https://github.com/wiiu-env/libmocha])])
+                           )
 ])
