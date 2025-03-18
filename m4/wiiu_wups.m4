@@ -8,7 +8,7 @@
 # any medium without royalty provided the copyright notice and this notice are
 # preserved. This file is offered as-is, without any warranty.
 
-#serial 2
+#serial 3
 
 # WIIU_WUPS_INIT
 # --------------
@@ -39,7 +39,9 @@ AC_DEFUN([WIIU_WUPS_INIT],[
                             [wups.h],
                             [wups],
                             [],
-                            [AC_MSG_ERROR([WUPS not found in $WIIU_WUPS_ROOT; get it from https://github.com/wiiu-env/WiiUPluginSystem])])
+                            [],
+                            [AC_MSG_ERROR([WUPS not found in $WIIU_WUPS_ROOT; get it from https://github.com/wiiu-env/WiiUPluginSystem])]
+                           )
 
 
     # custom Makefile rules

@@ -1,7 +1,7 @@
 /*
  * System Font Replacer - A plugin to temporarily replace the Wii U's system font.
  *
- * Copyright (C) 2024  Daniel K. O.
+ * Copyright (C) 2025  Daniel K. O.
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -43,6 +43,9 @@ using std::runtime_error;
 namespace logger = wups::logger;
 
 
+using namespace std::literals;
+
+
 WUPS_PLUGIN_NAME(PACKAGE_NAME);
 WUPS_PLUGIN_DESCRIPTION("Redirect the system font to a custom font on the SD card.");
 WUPS_PLUGIN_VERSION(PACKAGE_VERSION);
@@ -61,50 +64,40 @@ blob_t font_tw;
 
 namespace cfg {
 
-    namespace labels {
-        const char* enabled   = "Enabled";
-        const char* only_menu = "Use custom fonts only for Wii U Menu";
-        const char* path_cn   = "Cn Font";
-        const char* path_kr   = "Kr Font";
-        const char* path_std  = "Std Font";
-        const char* path_tw   = "Tw Font";
-    }
+    WUPSXX_OPTION("Enabled",
+                  bool, enabled, true);
+
+    WUPSXX_OPTION("Use custom fonts only for Wii U Menu",
+                  bool, only_menu, true);
+
+    WUPSXX_OPTION("Std Font",
+                  path, path_std, "fs:/vol/external01/wiiu/fonts");
+
+    WUPSXX_OPTION("Cn Font",
+                  path, path_cn, "fs:/vol/external01/wiiu/fonts");
+
+    WUPSXX_OPTION("Kr Font",
+                  path, path_kr, "fs:/vol/external01/wiiu/fonts");
+
+    WUPSXX_OPTION("Tw Font",
+                  path, path_tw, "fs:/vol/external01/wiiu/fonts");
 
 
-    namespace defaults {
-        bool enabled   = true;
-        bool only_menu = true;
-        path path_cn   = "fs:/vol/external01/wiiu/fonts";
-        path path_kr   = "fs:/vol/external01/wiiu/fonts";
-        path path_std  = "fs:/vol/external01/wiiu/fonts";
-        path path_tw   = "fs:/vol/external01/wiiu/fonts";
-    }
-
-
-    bool enabled   = defaults::enabled;
-    bool only_menu = defaults::only_menu;
-    path path_cn   = defaults::path_cn;
-    path path_kr   = defaults::path_kr;
-    path path_std  = defaults::path_std;
-    path path_tw   = defaults::path_tw;
+    std::vector<wups::option_base*> all_options{
+        &enabled,
+        &only_menu,
+        &path_std,
+        &path_cn,
+        &path_kr,
+        &path_tw,
+    };
 
 
     void
     load()
     {
-        try {
-#define LOAD(x) wups::storage::load_or_init(#x, x, defaults::x)
-            LOAD(enabled);
-            LOAD(only_menu);
-            LOAD(path_cn);
-            LOAD(path_kr);
-            LOAD(path_std);
-            LOAD(path_tw);
-#undef LOAD
-        }
-        catch (std::exception& e) {
-            logger::printf("exception caught: %s\n", e.what());
-        }
+        for (auto& opt : all_options)
+            opt->load();
     }
 
 
@@ -112,74 +105,43 @@ namespace cfg {
     save()
     {
         try {
-#define STORE(x) wups::storage::store(#x, x)
-            STORE(enabled);
-            STORE(only_menu);
-            STORE(path_cn);
-            STORE(path_kr);
-            STORE(path_std);
-            STORE(path_tw);
-#undef STORE
-            wups::storage::save();
+            for (const auto& opt : all_options)
+                opt->store();
+            wups::save();
         }
         catch (std::exception& e) {
-            logger::printf("exception caught: %s\n", e.what());
+            logger::printf("Error saving settings: %s\n", e.what());
         }
     }
-
 
 } // namespace cfg
 
 
 void
-menu_open(wups::config::category& root)
+menu_open(wups::category& root)
 {
-    logger::guard guard{PACKAGE_NAME};
-    root.add(wups::config::text_item::create("NOTE: Changes might NOT take effect until the next boot."));
+    const std::vector<std::string> dot_ttf{".ttf"};
 
-    root.add(wups::config::bool_item::create(cfg::labels::enabled,
-                                             cfg::enabled,
-                                             cfg::defaults::enabled,
-                                             "yes", "no"));
+    logger::guard guard;
+    using wups::make_item;
+    root.add(make_item(""s, "NOTE: Changes might NOT take effect until the next boot."s));
 
-    root.add(wups::config::file_item::create(cfg::labels::path_std,
-                                             cfg::path_std,
-                                             cfg::defaults::path_std,
-                                             40,
-                                             {".ttf"}));
+    root.add(make_item(cfg::enabled, "yes", "no"));
+    root.add(make_item(cfg::only_menu, "yes", "no"));
 
-    root.add(wups::config::file_item::create(cfg::labels::path_cn,
-                                             cfg::path_cn,
-                                             cfg::defaults::path_cn,
-                                             40,
-                                             {".ttf"}));
+    root.add(make_item(cfg::path_std, 40, dot_ttf));
+    root.add(make_item(cfg::path_cn, 40, dot_ttf));
+    root.add(make_item(cfg::path_kr, 40, dot_ttf));
+    root.add(make_item(cfg::path_tw, 40, dot_ttf));
 
-    root.add(wups::config::file_item::create(cfg::labels::path_kr,
-                                             cfg::path_kr,
-                                             cfg::defaults::path_kr,
-                                             40,
-                                             {".ttf"}));
-
-    root.add(wups::config::file_item::create(cfg::labels::path_tw,
-                                             cfg::path_tw,
-                                             cfg::defaults::path_tw,
-                                             40,
-                                             {".ttf"}));
-
-    root.add(wups::config::bool_item::create(cfg::labels::only_menu,
-                                             cfg::only_menu,
-                                             cfg::defaults::only_menu,
-                                             "yes", "no"));
-
-    root.add(wups::config::text_item::create("Website",
-                                             PACKAGE_URL));
+    root.add(make_item("Website"s, std::string(PACKAGE_URL)));
 }
 
 
 void
 menu_close()
 {
-    logger::guard guard{PACKAGE_NAME};
+    logger::guard guard;
     cfg::save();
 }
 
@@ -234,25 +196,27 @@ try_load_font(const path& font_path)
 
 INITIALIZE_PLUGIN()
 {
-    logger::guard guard{PACKAGE_NAME};
+    logger::set_prefix(PACKAGE_NAME);
+
+    logger::guard guard;
 
     try {
-        wups::config::init(PACKAGE_NAME, menu_open, menu_close);
+        wups::init(PACKAGE_NAME, menu_open, menu_close);
         cfg::load();
 
-        if (!cfg::enabled)
+        if (!cfg::enabled.value)
             return;
 
-        if (auto font = try_load_font(cfg::path_cn))
+        if (auto font = try_load_font(cfg::path_cn.value))
             font_cn = std::move(*font);
 
-        if (auto font = try_load_font(cfg::path_kr))
+        if (auto font = try_load_font(cfg::path_kr.value))
             font_kr = std::move(*font);
 
-        if (auto font = try_load_font(cfg::path_std))
+        if (auto font = try_load_font(cfg::path_std.value))
             font_std = std::move(*font);
 
-        if (auto font = try_load_font(cfg::path_tw))
+        if (auto font = try_load_font(cfg::path_tw.value))
             font_tw = std::move(*font);
     }
     catch (std::exception& e) {
@@ -280,24 +244,18 @@ DECL_FUNCTION(BOOL,
         goto real_function;
     }
 
-    if (!cfg::enabled)
+    if (!cfg::enabled.value)
         goto real_function;
 
-    if (cfg::only_menu) {
-
-#if 0
-        /*
-          This fragment will be enabled if/when:
-          - https://github.com/wiiu-env/WiiUPluginLoaderBackend/pull/86
-          - https://github.com/wiiu-env/WiiUPluginSystem/pull/76
-         */
-
-        // Avoid when inside WUPS config menu.
-        BOOL isMenuOpen = false;
-        WUPSConfigAPI_GetMenuOpen(&isMenuOpen);
-        if (isMenuOpen)
+    // Never replace the font in the WUPS config menu.
+    {
+        WUPSConfigAPIMenuStatus menu_status = WUPSCONFIG_API_MENU_STATUS_CLOSED;
+        WUPSConfigAPI_Menu_GetStatus(&menu_status);
+        if (menu_status == WUPSCONFIG_API_MENU_STATUS_OPENED)
             goto real_function;
-#endif
+    }
+
+    if (cfg::only_menu.value) {
 
         // Avoid when not inside the Wii U Menu.
         const std::uint64_t wii_u_menu_id = 0x0005001010040000;

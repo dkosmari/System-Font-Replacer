@@ -8,7 +8,7 @@
 # any medium without royalty provided the copyright notice and this notice are
 # preserved. This file is offered as-is, without any warranty.
 
-#serial 1
+#serial 2
 
 # DEVKITPRO_INIT
 # --------------
@@ -95,6 +95,7 @@ clean-strip-elf:; \$(RM) *.strip.elf
 # DEVKITPRO_CHECK_LIBRARY(VARIABLE-PREFIX,
 #                         HEADER,
 #                         LIBRARY,
+#                         [LDFLAGS],
 #                         [ACTION-IF-FOUND],
 #                         [ACTION-IF-NOT-FOUND])
 # ----------------------------------------------
@@ -107,13 +108,17 @@ AC_DEFUN([DEVKITPRO_CHECK_LIBRARY], [
     AX_VAR_PUSHVALUE([CFLAGS],   [$DEVKITPRO_CFLAGS $CFLAGS])
     AX_VAR_PUSHVALUE([CPPFLAGS], [$DEVKITPRO_CPPFLAGS $CPPFLAGS])
     AX_VAR_PUSHVALUE([CXXFLAGS], [$DEVKITPRO_CXXFLAGS $CXXFLAGS])
-    AX_VAR_PUSHVALUE([LDFLAGS],  [$DEVKITPRO_LDFLAGS $LDFLAGS])
+    AX_VAR_PUSHVALUE([LDFLAGS],  [$DEVKITPRO_LDFLAGS $LDFLAGS $4])
     AX_VAR_PUSHVALUE([LIBS],     [$DEVKITPRO_LIBS $LIBS])
 
     AX_CHECK_LIBRARY([$1], [$2], [$3],
-                     [AX_PREPEND_FLAG([-l$3], [DEVKITPRO_LIBS])
-                      $4],
-                     [$5])
+                     [
+                         AX_PREPEND_FLAG([-l$3], [DEVKITPRO_LIBS])
+                         AX_PREPEND_FLAG([$4], [DEVKITPRO_LDFLAGS])
+                         $5
+                     ],
+                     [$6]
+                    )
 
     AX_VAR_POPVALUE([LIBS])
     AX_VAR_POPVALUE([LDFLAGS])
