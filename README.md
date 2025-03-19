@@ -7,6 +7,12 @@ anything in your NAND.
 
 **No system file is modified by this plugin. All changes are done in RAM only.**
 
+<p align="center">
+    <a href="https://hb-app.store/wiiu/SystemFontReplacer">
+        <img src="assets/hbasbadge-wiiu.png" width="335" height="96">
+    </a>
+</p>
+
 
 ## Usage
 
