@@ -13,8 +13,8 @@ anything in your NAND.
 The plugin can load TrueType fonts from anywhere in the SD card, but it's a good idea to have
 them in `SD:/wiiu/fonts/`; that's the default location the plugin looks for fonts.
 
-1. Open up the WUPS menu (**L + ↓ + SELECT**) and enter the **System Font
-   Replacer** menu.
+1. Open up the WUPS menu (**L + DOWN + SELECT**) and enter the **System Font Replacer**
+   menu.
 
 2. Ensure the "Enabled" option is set to "*yes*", otherwise the plugin won't do anything.
 
@@ -41,13 +41,20 @@ them in `SD:/wiiu/fonts/`; that's the default location the plugin looks for font
 5. Restart the game/app/Wii U Menu.
 
 
+## "Only on the Wii U Menu"
+
+When this option set to "*yes*", the custom font will only be used on the Wii U Menu. Set
+it to "*no*" to allow the font to be used in games and applets.
+
+
 ## Freezes/Crashes and text glitches
 
 Not every game/app has good a font rendering implementation. Some cannot handle more
-"advanced" TTF fonts, and will either render it incorrectly, or outright crash.
+advanced TTF fonts, and will either render it incorrectly, or outright crash.
 
-Please do not report bugs about crashes that only occur with some fonts; that's a
-limitation inside the game/app, and there's nothing this plugin can do to fix it.
+Please do not report bugs about crashes that only occur with some fonts, there's nothing
+the plugin can do to work around this. Either use a different font, or enable the "Only on
+the Wii U Menu" option.
 
 
 ## Large font files
@@ -102,19 +109,11 @@ font.
    to use it.
 
 
-## "Use custom fonts only for Wii U Menu"
-
-If you disable this option, the font will show up in any other software that requests the
-system font. Some of them may crash, or might not render properly. To avoid surprises,
-leave this option enabled ("*yes*"), so only the Wii U Menu is affected by the custom
-font. If you trust your custom font to not crash the on-screen keyboard, the System
-Settings, the Friends List, etc, you can disable this option ("*no*").
-
-
 ## Helper App
 
-If you get a custom font in the form of a `.bps` patch, to be applied to one of the system
-fonts, you can use the [System Font Replacer Helper](helper-app) to easily convert them.
+If you download a custom font in the form of a `.bps` patch, to be applied to one of the
+system fonts, you can use the [System Font Replacer Helper](helper-app) to easily convert
+them.
 
 Simply put your `.bps` patches in `SD:/wiiu/fonts/`, and run the Helper app. It will then
 automatically convert all `.bps` patches in that folder into `.ttf` fonts.

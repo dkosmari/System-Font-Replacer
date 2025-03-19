@@ -59,7 +59,7 @@ namespace cfg {
     WUPSXX_OPTION("Enabled",
                   bool, enabled, true);
 
-    WUPSXX_OPTION("Use custom fonts only for Wii U Menu",
+    WUPSXX_OPTION("  └ Only on Wii U Menu",
                   bool, only_menu, true);
 
     WUPSXX_OPTION("Std Font",
@@ -280,6 +280,45 @@ try_load_font(const path& font_path)
 }
 
 
+bool
+from_wups_menu()
+    noexcept
+{
+    WUPSConfigAPIMenuStatus menu_status = WUPSCONFIG_API_MENU_STATUS_CLOSED;
+    WUPSConfigAPI_Menu_GetStatus(&menu_status);
+    return menu_status == WUPSCONFIG_API_MENU_STATUS_OPENED;
+}
+
+
+bool
+from_wiiu_menu()
+    noexcept
+{
+    switch (OSGetTitleID()) {
+        case 0x00050010'10040000: // JPN
+        case 0x00050010'10040100: // USA
+        case 0x00050010'10040200: // EUR
+            return true;
+        default:
+            return false;
+    }
+}
+
+
+bool
+from_wiiu_menu_swkbd()
+    noexcept
+{
+    OSThread* th_id = OSGetCurrentThread();
+    const char* th_name = OSGetThreadName(th_id);
+    if (!th_name)
+        return false;
+    if (strcmp("MenSwkbdCalculator_Create", th_name))
+        return false;
+    return true;
+}
+
+
 INITIALIZE_PLUGIN()
 {
     logger::set_prefix(PACKAGE_NAME);
@@ -298,49 +337,6 @@ INITIALIZE_PLUGIN()
 ON_APPLICATION_ENDS()
 {
     unload_all_fonts();
-}
-
-
-namespace {
-
-    bool
-    from_wups_menu()
-        noexcept
-    {
-        WUPSConfigAPIMenuStatus menu_status = WUPSCONFIG_API_MENU_STATUS_CLOSED;
-        WUPSConfigAPI_Menu_GetStatus(&menu_status);
-        return menu_status == WUPSCONFIG_API_MENU_STATUS_OPENED;
-    }
-
-
-    bool
-    from_wiiu_menu()
-        noexcept
-    {
-        switch (OSGetTitleID()) {
-            case 0x00050010'10040000: // JPN
-            case 0x00050010'10040100: // USA
-            case 0x00050010'10040200: // EUR
-                return true;
-            default:
-                return false;
-        }
-    }
-
-
-    bool
-    from_wiiu_menu_swkbd()
-        noexcept
-    {
-        OSThread* th_id = OSGetCurrentThread();
-        const char* th_name = OSGetThreadName(th_id);
-        if (!th_name)
-            return false;
-        if (strcmp("MenSwkbdCalculator_Create", th_name))
-            return false;
-        return true;
-    }
-
 }
 
 
