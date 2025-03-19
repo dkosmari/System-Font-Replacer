@@ -31,7 +31,10 @@ noinst_PROGRAMS = system-font-replacer-helper.elf
 system_font_replacer_helper_elf_SOURCES = \
 	src/bps.cpp src/bps.hpp \
 	src/crc32.cpp src/crc32.hpp \
-	src/main.cpp
+	src/glue_stdio.cpp \
+	src/main.cpp \
+	src/mocha.cpp src/mocha.hpp \
+	src/whb.cpp src/whb.hpp
 
 
 $(WUHB_FILE): $(RPX_FILE)

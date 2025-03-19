@@ -7,8 +7,10 @@
  */
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>              // strcmp
 #include <filesystem>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <utility>              // move()
@@ -26,24 +28,13 @@
 #include <wupsxx/category.hpp>
 #include <wupsxx/file_item.hpp>
 #include <wupsxx/init.hpp>
-#include <wupsxx/logger.hpp>
 #include <wupsxx/storage.hpp>
 #include <wupsxx/text_item.hpp>
+#include <wupsxx/logger.hpp>
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-
-
-using blob_t = std::vector<char>;
-
-using std::filesystem::path;
-using std::runtime_error;
-
-namespace logger = wups::logger;
-
-
-using namespace std::literals;
 
 
 WUPS_PLUGIN_NAME(PACKAGE_NAME);
@@ -56,10 +47,11 @@ WUPS_USE_WUT_DEVOPTAB();
 WUPS_USE_STORAGE(PACKAGE_TARNAME);
 
 
-blob_t font_cn;
-blob_t font_kr;
-blob_t font_std;
-blob_t font_tw;
+using std::filesystem::path;
+
+using namespace std::literals;
+
+namespace logger = wups::logger;
 
 
 namespace cfg {
@@ -120,11 +112,12 @@ namespace cfg {
 void
 menu_open(wups::category& root)
 {
+    logger::guard guard;
+
     const std::vector<std::string> dot_ttf{".ttf"};
 
-    logger::guard guard;
     using wups::make_item;
-    root.add(make_item(""s, "NOTE: Changes might NOT take effect until the next boot."s));
+    root.add(make_item("NOTE"s, "Restart the app/game for the font to change."s, 60));
 
     root.add(make_item(cfg::enabled, "yes", "no"));
     root.add(make_item(cfg::only_menu, "yes", "no"));
@@ -146,9 +139,99 @@ menu_close()
 }
 
 
+struct blob_t {
+    std::unique_ptr<char[]> data_ptr;
+    std::size_t data_size = 0;
+
+    constexpr
+    blob_t() noexcept = default;
+
+    blob_t(std::size_t sz)
+    {
+        data_ptr = std::make_unique<char[]>(sz);
+        data_size = sz;
+    }
+
+    blob_t(blob_t&& other)
+        noexcept :
+        data_ptr{std::move(other.data_ptr)},
+        data_size{other.data_size}
+    {
+        other.data_size = 0;
+    }
+
+    blob_t&
+    operator =(blob_t&& other)
+        noexcept
+    {
+        if (this != &other) {
+            data_ptr = std::move(other.data_ptr);
+            data_size = other.data_size;
+            other.data_size = 0;
+        }
+        return *this;
+    }
+
+    void
+    clear()
+        noexcept
+    {
+        data_ptr.reset();
+        data_size = 0;
+    }
+
+    const char*
+    data()
+        const noexcept
+    {
+        return data_ptr.get();
+    }
+
+    char*
+    data()
+        noexcept
+    {
+        return data_ptr.get();
+    }
+
+    std::size_t
+    size()
+        const noexcept
+    {
+        return data_size;
+    }
+
+    bool
+    empty()
+        const noexcept
+    {
+        return !data_ptr;
+    }
+
+};
+
+
+blob_t font_cn;
+blob_t font_kr;
+blob_t font_std;
+blob_t font_tw;
+
+
+void
+unload_all_fonts()
+{
+    font_cn.clear();
+    font_kr.clear();
+    font_std.clear();
+    font_tw.clear();
+}
+
+
 std::optional<blob_t>
 try_load_font(const path& font_path)
 {
+    using std::runtime_error;
+
     FILE* f = nullptr;
     try {
         // silently exits if file doesn't exist, or is not a file
@@ -187,8 +270,11 @@ try_load_font(const path& font_path)
     catch (std::exception& e) {
         if (f)
             std::fclose(f);
-        logger::printf("Failed to load font file \"%s\": %s\n",
-                       font_path.c_str(), e.what());
+        // Note: we can't use WHBLog* inside applets
+        OSReport("[%s] Failed to load font file \"%s\": %s\n",
+                 PACKAGE_NAME,
+                 font_path.c_str(),
+                 e.what());
         return {};
     }
 }
@@ -197,31 +283,64 @@ try_load_font(const path& font_path)
 INITIALIZE_PLUGIN()
 {
     logger::set_prefix(PACKAGE_NAME);
-
     logger::guard guard;
 
     try {
         wups::init(PACKAGE_NAME, menu_open, menu_close);
         cfg::load();
-
-        if (!cfg::enabled.value)
-            return;
-
-        if (auto font = try_load_font(cfg::path_cn.value))
-            font_cn = std::move(*font);
-
-        if (auto font = try_load_font(cfg::path_kr.value))
-            font_kr = std::move(*font);
-
-        if (auto font = try_load_font(cfg::path_std.value))
-            font_std = std::move(*font);
-
-        if (auto font = try_load_font(cfg::path_tw.value))
-            font_tw = std::move(*font);
     }
     catch (std::exception& e) {
-        logger::printf("ERROR: %s\n", e.what());
+        logger::printf("Init error: %s\n", e.what());
     }
+}
+
+
+ON_APPLICATION_ENDS()
+{
+    unload_all_fonts();
+}
+
+
+namespace {
+
+    bool
+    from_wups_menu()
+        noexcept
+    {
+        WUPSConfigAPIMenuStatus menu_status = WUPSCONFIG_API_MENU_STATUS_CLOSED;
+        WUPSConfigAPI_Menu_GetStatus(&menu_status);
+        return menu_status == WUPSCONFIG_API_MENU_STATUS_OPENED;
+    }
+
+
+    bool
+    from_wiiu_menu()
+        noexcept
+    {
+        switch (OSGetTitleID()) {
+            case 0x00050010'10040000: // JPN
+            case 0x00050010'10040100: // USA
+            case 0x00050010'10040200: // EUR
+                return true;
+            default:
+                return false;
+        }
+    }
+
+
+    bool
+    from_wiiu_menu_swkbd()
+        noexcept
+    {
+        OSThread* th_id = OSGetCurrentThread();
+        const char* th_name = OSGetThreadName(th_id);
+        if (!th_name)
+            return false;
+        if (strcmp("MenSwkbdCalculator_Create", th_name))
+            return false;
+        return true;
+    }
+
 }
 
 
@@ -229,8 +348,8 @@ DECL_FUNCTION(BOOL,
               OSGetSharedData,
               OSSharedDataType type,
               uint32_t unused,
-              void** buf,
-              uint32_t* size)
+              void** out_data,
+              uint32_t* out_size)
 {
     if (unused == 0xefface) {
         /*
@@ -248,66 +367,65 @@ DECL_FUNCTION(BOOL,
         goto real_function;
 
     // Never replace the font in the WUPS config menu.
-    {
-        WUPSConfigAPIMenuStatus menu_status = WUPSCONFIG_API_MENU_STATUS_CLOSED;
-        WUPSConfigAPI_Menu_GetStatus(&menu_status);
-        if (menu_status == WUPSCONFIG_API_MENU_STATUS_OPENED)
-            goto real_function;
-    }
+    if (from_wups_menu())
+        goto real_function;
 
     if (cfg::only_menu.value) {
 
         // Avoid when not inside the Wii U Menu.
-        const std::uint64_t wii_u_menu_id = 0x0005001010040000;
-        const std::uint64_t region_mask   = 0xfffffffffffffcff;
-        const std::uint64_t title = OSGetTitleID();
-        if ((title & region_mask) != wii_u_menu_id)
+        if (!from_wiiu_menu())
             goto real_function;
 
         // Avoid when using the on-screen keyboard inside the Wii U Menu.
-        OSThread* th_id = OSGetCurrentThread();
-        const char* th_name = OSGetThreadName(th_id);
-        if (th_name && !strcmp("MenSwkbdCalculator_Create", th_name))
+        if (from_wiiu_menu_swkbd())
             goto real_function;
     }
 
-    switch (type) {
+    {
+        auto handle_font = [&out_data, &out_size](blob_t& font_blob,
+                                                  const path& font_path)
+        {
+            if (font_blob.empty()) {
+                if (auto font = try_load_font(font_path))
+                    font_blob = std::move(*font);
+                else
+                    return false;
+            }
+            *out_data  = font_blob.data();
+            *out_size = font_blob.size();
+            return true;
+        };
 
-    case OS_SHAREDDATATYPE_FONT_CHINESE:
-        if (font_cn.empty())
-            goto real_function;
-        *buf  = font_cn.data();
-        *size = font_cn.size();
-        return true;
+        switch (type) {
 
-    case OS_SHAREDDATATYPE_FONT_KOREAN:
-        if (font_kr.empty())
-            goto real_function;
-        *buf  = font_kr.data();
-        *size = font_kr.size();
-        return true;
+            case OS_SHAREDDATATYPE_FONT_CHINESE:
+                if (!handle_font(font_cn, cfg::path_cn.value))
+                    goto real_function;
+                return true;
 
-    case OS_SHAREDDATATYPE_FONT_STANDARD:
-        if (font_std.empty())
-            goto real_function;
-        *buf  = font_std.data();
-        *size = font_std.size();
-        return true;
+            case OS_SHAREDDATATYPE_FONT_KOREAN:
+                if (!handle_font(font_kr, cfg::path_kr.value))
+                    goto real_function;
+                return true;
 
-    case OS_SHAREDDATATYPE_FONT_TAIWANESE:
-        if (font_tw.empty())
-            goto real_function;
-        *buf  = font_tw.data();
-        *size = font_tw.size();
-        return true;
+            case OS_SHAREDDATATYPE_FONT_STANDARD:
+                if (!handle_font(font_std, cfg::path_std.value))
+                    goto real_function;
+                return true;
 
-    default:
-        ;
+            case OS_SHAREDDATATYPE_FONT_TAIWANESE:
+                if (!handle_font(font_tw, cfg::path_tw.value))
+                    goto real_function;
+                return true;
 
-    } // switch (type)
+            default:
+                ;
+
+        } // switch (type)
+    }
 
  real_function:
-    return real_OSGetSharedData(type, unused, buf, size);
+    return real_OSGetSharedData(type, unused, out_data, out_size);
 }
 
 

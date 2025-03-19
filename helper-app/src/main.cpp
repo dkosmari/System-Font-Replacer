@@ -1,7 +1,7 @@
 /*
  * System Font Replacer - A plugin to temporarily replace the Wii U's system font.
  *
- * Copyright (C) 2024  Daniel K. O.
+ * Copyright (C) 2025  Daniel K. O.
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -22,21 +22,13 @@
 #include <variant>
 #include <vector>
 
-#include <sys/iosupport.h>
-
 #include <padscore/kpad.h>
-#include <sysapp/launch.h>
 #include <vpad/input.h>
-#include <whb/log.h>
-#include <whb/log_console.h>
-#include <whb/log_module.h>
-#include <whb/proc.h>
-#include <whb/sdcard.h>
-
-#include <mocha/mocha.h>
 
 #include "bps.hpp"
 #include "crc32.hpp"
+#include "mocha.hpp"
+#include "whb.hpp"
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -62,186 +54,18 @@ struct font_info {
 };
 
 
-struct guard_base {
-    bool valid = false;
-
-    operator bool()
-        const noexcept
-    {
-        return valid;
-    }
-};
-
-
-namespace mocha {
-
-    struct error : runtime_error {
-
-        error(MochaUtilsStatus status) :
-            runtime_error{Mocha_GetStatusStr(status)}
-        {}
-
-    };
-
-
-    struct init_guard : guard_base {
-
-        init_guard()
-        {
-            auto status = Mocha_InitLibrary();
-            if (status != MOCHA_RESULT_SUCCESS)
-                throw error{status};
-            valid = true;
-        }
-
-        ~init_guard()
-        {
-            if (valid)
-                Mocha_DeInitLibrary();
-        }
-
-    };
-
-
-    struct mount_guard : guard_base {
-
-        const std::string name;
-
-        mount_guard(const std::string& name,
-                    const std::optional<path>& dev_path,
-                    const path& mnt_path) :
-            name{name}
-        {
-            auto status = Mocha_MountFS(name.c_str(),
-                                        dev_path ? dev_path->c_str() : nullptr,
-                                        mnt_path.c_str());
-            if (status != MOCHA_RESULT_SUCCESS)
-                throw error{status};
-
-            valid = true;
-            cout << "Mounted " << name << endl;
-        }
-
-        ~mount_guard()
-        {
-            if (valid) {
-                Mocha_UnmountFS(name.c_str());
-                cout << "Unmounted " << name << endl;
-            }
-        }
-
-    };
-
-} // namespace mocha
-
-
-namespace whb {
-
-    struct log_module : guard_base {
-
-        log_module()
-        {
-            valid = WHBLogModuleInit();
-        }
-
-
-        ~log_module()
-        {
-            if (valid)
-                WHBLogModuleDeinit();
-        }
-
-    };
-
-
-    struct console : guard_base {
-
-
-        console()
-        {
-            valid = WHBLogConsoleInit();
-        }
-
-
-        ~console()
-        {
-            if (valid)
-                WHBLogConsoleFree();
-        }
-
-
-        void
-        set_color(std::uint8_t r, std::uint8_t g, std::uint8_t b)
-        {
-            uint32_t color = uint32_t{r} << 24 |
-                             uint32_t{g} << 16 |
-                             uint32_t{b} << 8;
-            WHBLogConsoleSetColor(color);
-        }
-
-
-        static
-        void
-        draw()
-        {
-            WHBLogConsoleDraw();
-        }
-
-    };
-
-
-    struct proc {
-
-        proc() noexcept
-        { WHBProcInit(); }
-
-        ~proc() noexcept
-        { WHBProcShutdown(); }
-
-        static
-        void
-        stop() noexcept
-        {
-            SYSLaunchMenu();
-        }
-
-        static
-        bool
-        is_running() noexcept
-        {
-            return WHBProcIsRunning();
-        }
-
-
-        struct quit {};
-
-    };
-
-
-    struct sd_mount : guard_base {
-
-        sd_mount()
-        {
-            valid = WHBMountSdCard();
-        }
-
-        ~sd_mount()
-        {
-            if (valid)
-                WHBUnmountSdCard();
-        }
-
-    };
-
-} // namespace whb
-
-
 struct kpad {
+
     kpad() noexcept
-    { KPADInit(); }
+    {
+        KPADInit();
+    }
 
     ~kpad()
-    { KPADShutdown(); }
+    {
+        KPADShutdown();
+    }
+
 };
 
 
@@ -253,34 +77,6 @@ enum class Stage {
     Apply,
 
 };
-
-
-ssize_t
-write_to_log(_reent*, void*, const char* ptr, size_t len)
-{
-    try {
-        // only way to guarantee it's null-terminated
-        std::string buf{ptr, len};
-        if (!WHBLogWrite(buf.c_str()))
-            return -1;
-        whb::console::draw();
-        return buf.size();
-    }
-    catch (...) {
-        return -1;
-    }
-}
-
-
-__attribute__((__constructor__))
-void
-init_stdio()
-{
-    static devoptab_t dev_out;
-    dev_out.name = "stdout";
-    dev_out.write_r = write_to_log;
-    devoptab_list[STD_OUT] = &dev_out;
-}
 
 
 std::string
@@ -514,7 +310,6 @@ int main()
     whb::log_module log_guard;
     whb::proc proc;
     whb::console console;
-    whb::sd_mount sd_guard;
 
     WPADEnableURCC(true);
 
@@ -524,14 +319,12 @@ int main()
     cout << PACKAGE_URL << endl;
 
     try {
-        if (!sd_guard)
-            throw runtime_error{"Failed to mount SD card."};
 
         // Look up system fonts by crc32.
         std::map<uint32_t, font_info> cafe_fonts;
         {
-            mocha::init_guard mocha_init;
-            mocha::mount_guard mount_mlc_guard{"storage_mlc", {}, "/vol/storage_mlc01"};
+            mocha::lib_init mocha_lib;
+            mocha::mount mount_mlc_guard{"storage_mlc", {}, "/vol/storage_mlc01"};
 
             const auto cafe_names = {
                 "CafeCn.ttf",

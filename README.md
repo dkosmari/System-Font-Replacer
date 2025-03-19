@@ -29,12 +29,16 @@ them in `SD:/wiiu/fonts/`; that's the default location the plugin looks for font
    Use it to navigate to the desired `.ttf` font you want to use, then press **A** to
    confirm it.
 
-   Note that, if you select a directory (like the default, `SD:/wiiu/fonts`) the font will
-   not be replaced, and the original system font is used instead.
+   > Note that, if you select a directory (like the default, `SD:/wiiu/fonts`) the font will
+   > not be replaced, and the original system font is used instead.
+   
+   > **Std** font is used for Western and Japanese text. Use the **Cn**, **Kr** or **Tw**
+   > options if you want to replace the Simplified Chinese, Korean, or Traditional Chinese
+   > fonts.
 
 4. Exit the plugin menu.
 
-5. Reboot your Wii U.
+5. Restart the game/app/Wii U Menu.
 
 
 ## Freezes/Crashes and text glitches
@@ -49,7 +53,7 @@ limitation inside the game/app, and there's nothing this plugin can do to fix it
 ## Large font files
 
 Aroma plugins have very limited amount of memory to use. If the font file is too large, it
-might use too much memory, and other plugins might stop working. Fonts up to 2.5 MiB in
+might use too much memory, and other plugins might stop working. Fonts up to 12.5 MiB in
 size seem to work fine; I have not tested larger fonts.
 
 
