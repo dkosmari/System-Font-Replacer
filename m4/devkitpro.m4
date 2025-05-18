@@ -2,13 +2,13 @@
 # devkitpro.m4 - Macros to handle devkitPro setup.
 # URL: https://github.com/dkosmari/devkitpro-autoconf/
 
-# Copyright (c) 2024 Daniel K. O. <dkosmari>
+# Copyright (c) 2025 Daniel K. O. <dkosmari>
 #
 # Copying and distribution of this file, with or without modification, are permitted in
 # any medium without royalty provided the copyright notice and this notice are
 # preserved. This file is offered as-is, without any warranty.
 
-#serial 2
+#serial 3
 
 # DEVKITPRO_INIT
 # --------------
@@ -17,11 +17,7 @@
 #
 # Output variables:
 #   - `DEVKITPRO': path to devkitPro.
-#   - `DEVKITPRO_CFLAGS': declared precious.
-#   - `DEVKITPRO_CPPFLAGS': declared precious.
-#   - `DEVKITPRO_CXXFLAGS': declared precious.
-#   - `DEVKITPRO_LDFLAGS': declared precious.
-#   - `DEVKITPRO_LIBS': declared precious.
+#   - `DEVKITPRO_PORTLIBS': path to portlibs.
 #
 # The file `aminclude.am` is generated with extra Makefile rules:
 #   - Add `@INC_AMINCLUDE@` to the Makefile that needs them.
@@ -50,15 +46,15 @@ AC_DEFUN([DEVKITPRO_INIT], [
     AC_BEFORE([$0], [AC_PATH_TOOL])
     AC_BEFORE([$0], [PKG_PROG_PKG_CONFIG])
 
-    # make DEVKITPRO precious
     AC_ARG_VAR([DEVKITPRO], [path to devkitPro])
 
-    # --with-devkitpro
+    # --with-devkitpro can override DEVKITPRO variable
     AC_ARG_WITH([devkitpro],
                 [AS_HELP_STRING([--with-devkitpro=PATH-TO-DEVKITPRO],
                                 [Set the base path to devkitPro. This overrides the variable DEVKITPRO])],
                 [AS_VAR_SET([DEVKITPRO], [$withval])])
 
+    # check if DEVKITPRO is set
     AC_MSG_CHECKING([devkitPro path])
 
     AS_VAR_SET_IF([DEVKITPRO],
@@ -67,19 +63,15 @@ AC_DEFUN([DEVKITPRO_INIT], [
                   ],
                   [
                       AC_MSG_RESULT([not found])
-                      AC_MSG_ERROR([You need either `--with-devkitpro=PATH-TO-DEVKITPRO' or the `DEVKITPRO' variable.])
+                      AC_MSG_ERROR([need --with-devkitpro=PATH-TO-DEVKITPRO or DEVKITPRO=PATH-TO-DEVKITPRO])
                   ])
 
+    AC_SUBST([DEVKITPRO])
 
-    # set PORTLIBS_ROOT
-    AS_VAR_SET([PORTLIBS_ROOT], [$DEVKITPRO/portlibs])
-
-
-    AC_ARG_VAR([DEVKITPRO_CFLAGS], [C compilation flags for devkitPro])
-    AC_ARG_VAR([DEVKITPRO_CPPFLAGS], [includes search path for devkitPro])
-    AC_ARG_VAR([DEVKITPRO_CXXFLAGS], [C++ compilation flags for devkitPro])
-    AC_ARG_VAR([DEVKITPRO_LDFLAGS], [linker flags for devkitPro])
-    AC_ARG_VAR([DEVKITPRO_LIBS], [libraries for devkitPro])
+    # set DEVKITPRO_PORTLIBS
+    AC_ARG_VAR([DEVKITPRO_PORTLIBS], [path to portlibs])
+    AS_VAR_SET([DEVKITPRO_PORTLIBS], [$DEVKITPRO/portlibs])
+    AC_SUBST([DEVKITPRO_PORTLIBS])
 
     # custom Makefile rules
     AX_ADD_AM_MACRO([
@@ -89,56 +81,29 @@ clean-strip-elf:; \$(RM) *.strip.elf
 %.strip.elf: %.elf; \$(STRIP) -g \$< -o \$[@]
 ])
 
-])
+    # make updated PATH visible to Makefiles
+    AC_ARG_VAR([PATH])
+    AC_SUBST([PATH])
+    
+])dnl DEVKITPRO_INIT
 
 
-# DEVKITPRO_CHECK_LIBRARY(VARIABLE-PREFIX,
-#                         HEADER,
-#                         LIBRARY,
-#                         [LDFLAGS],
-#                         [ACTION-IF-FOUND],
-#                         [ACTION-IF-NOT-FOUND])
+# DEVKITPRO_APPEND_PATH(EXECUTABLE, SEARCH-PATH)
 # ----------------------------------------------
+# This macro checks if an executable is found in PATH; if not, appends SEARCH-PATH to PATH.
 #
 # Output variables:
-#   - `DEVKITPRO_LIBS'
-#   - `HAVE_PREFIX'
+#   - `PATH'
 
-AC_DEFUN([DEVKITPRO_CHECK_LIBRARY], [
-    AX_VAR_PUSHVALUE([CFLAGS],   [$DEVKITPRO_CFLAGS $CFLAGS])
-    AX_VAR_PUSHVALUE([CPPFLAGS], [$DEVKITPRO_CPPFLAGS $CPPFLAGS])
-    AX_VAR_PUSHVALUE([CXXFLAGS], [$DEVKITPRO_CXXFLAGS $CXXFLAGS])
-    AX_VAR_PUSHVALUE([LDFLAGS],  [$DEVKITPRO_LDFLAGS $LDFLAGS $4])
-    AX_VAR_PUSHVALUE([LIBS],     [$DEVKITPRO_LIBS $LIBS])
-
-    AX_CHECK_LIBRARY([$1], [$2], [$3],
-                     [
-                         AX_PREPEND_FLAG([-l$3], [DEVKITPRO_LIBS])
-                         AX_PREPEND_FLAG([$4], [DEVKITPRO_LDFLAGS])
-                         $5
-                     ],
-                     [$6]
-                    )
-
-    AX_VAR_POPVALUE([LIBS])
-    AX_VAR_POPVALUE([LDFLAGS])
-    AX_VAR_POPVALUE([CXXFLAGS])
-    AX_VAR_POPVALUE([CPPFLAGS])
-    AX_VAR_POPVALUE([CFLAGS])
-
-])
-
-
-AC_DEFUN([DEVKITPRO_TOOL_PATH], [
-
-    AS_VAR_SET([_TOOL_NAME], [$1])
-    AC_MSG_CHECKING([if $DEVKITPRO/tools/bin is in PATH])
-    AS_IF([! which $_TOOL_NAME 1>/dev/null 2>/dev/null],
+AC_DEFUN([DEVKITPRO_APPEND_PATH], [
+    AC_MSG_CHECKING([if $2 is in PATH])
+    AS_IF([! which $1 1>/dev/null 2>/dev/null],
           [
-              AC_MSG_RESULT([no, will append to PATH])
-              AS_VAR_APPEND([PATH], [":$DEVKITPRO/tools/bin"])
-              AC_SUBST([PATH])
+              AC_MSG_RESULT([no, will append $2 to PATH])
+              AS_VAR_APPEND([PATH], [":$2"])
+              # Test if it's usable.
+              AS_IF([! which $1 1>/dev/null 2>/dev/null],
+                    [AC_MSG_ERROR([could not execute $1])])
           ],
           [AC_MSG_RESULT([yes])])
-
-])
+])dnl DEVKITPRO_APPEND_PATH

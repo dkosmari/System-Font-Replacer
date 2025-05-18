@@ -10,15 +10,7 @@ EXTRA_DIST = \
 	README.md
 
 
-AM_CPPFLAGS = $(DEVKITPRO_CPPFLAGS)
-
-AM_CXXFLAGS = \
-	-Wall -Wextra \
-	$(DEVKITPRO_CXXFLAGS)
-
-AM_LDFLAGS = $(DEVKITPRO_LDFLAGS)
-
-LIBS = $(DEVKITPRO_LIBS)
+AM_CXXFLAGS = -Wall -Wextra -Werror
 
 
 RPX_FILE  = system-font-replacer-helper.rpx
@@ -29,11 +21,14 @@ CLEANFILES = $(WUHB_FILE) $(RPX_FILE)
 noinst_PROGRAMS = system-font-replacer-helper.elf
 
 system_font_replacer_helper_elf_SOURCES = \
-	src/bps.cpp src/bps.hpp \
-	src/crc32.cpp src/crc32.hpp \
+	src/bps.cpp \
+	src/bps.hpp \
+	src/crc32.cpp \
+	src/crc32.hpp \
 	src/glue_stdio.cpp \
 	src/main.cpp \
-	src/mocha.cpp src/mocha.hpp \
+	src/mocha.cpp \
+	src/mocha.hpp \
 	src/whb.cpp src/whb.hpp
 
 

@@ -20,9 +20,11 @@ AC_PROG_CXX
 AX_APPEND_COMPILE_FLAGS([-std=c++23], [CXX])
 AC_LANG([C++])
 
+WIIU_WUPS_SETUP
+
 AC_CONFIG_FILES([Makefile])
 
-AC_CONFIG_SUBDIRS([external/libwupsxx
-                   helper-app])
+AX_SUBDIRS_CONFIGURE([external/libwupsxx])
+AX_SUBDIRS_CONFIGURE([helper-app])
 
 AC_OUTPUT

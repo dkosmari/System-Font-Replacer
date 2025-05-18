@@ -19,17 +19,11 @@ EXTRA_DIST = \
 	README.md
 
 
-AM_CPPFLAGS = \
-	$(DEVKITPRO_CPPFLAGS) \
-	-Iexternal/libwupsxx/include
+AM_CPPFLAGS = -I$(srcdir)/external/libwupsxx/include
 
-AM_CXXFLAGS = \
-	$(DEVKITPRO_CXXFLAGS) \
-	-Wall -Wextra
+AM_CXXFLAGS = -Wall -Wextra -Werror
 
-AM_LDFLAGS = $(DEVKITPRO_LDFLAGS)
-
-LIBS = $(DEVKITPRO_LIBS)
+LDADD = external/libwupsxx/src/libwupsxx.a
 
 
 WPS_FILE = system-font-replacer.wps
@@ -39,7 +33,6 @@ noinst_PROGRAMS = system-font-replacer.elf
 
 system_font_replacer_elf_SOURCES = src/main.cpp
 
-system_font_replacer_elf_LDADD = external/libwupsxx/src/libwupsxx.a
 
 
 all-local: $(WPS_FILE)
