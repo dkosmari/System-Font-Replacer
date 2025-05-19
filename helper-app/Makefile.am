@@ -12,6 +12,8 @@ EXTRA_DIST = \
 
 AM_CXXFLAGS = -Wall -Wextra -Werror
 
+LDADD = -lmocha
+
 
 RPX_FILE  = system-font-replacer-helper.rpx
 WUHB_FILE = system-font-replacer-helper.wuhb

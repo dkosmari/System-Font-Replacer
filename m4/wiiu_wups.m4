@@ -8,10 +8,11 @@
 # any medium without royalty provided the copyright notice and this notice are
 # preserved. This file is offered as-is, without any warranty.
 
-#serial 4
+#serial 5
 
 # WIIU_WUPS_INIT
 # --------------
+#
 # This macro adjusts the environment for the Wii U Plugin System (WUPS).
 #
 # Output variables:
@@ -29,6 +30,7 @@ AC_DEFUN([WIIU_WUPS_INIT],[
 
 # WIIU_WUPS_SETUP
 # ---------------
+#
 # This macro adjusts compilation flags for the Wii U Plugin System (WUPS).
 #
 # Output variables:
@@ -51,14 +53,15 @@ AC_DEFUN([WIIU_WUPS_SETUP],[
     AX_PREPEND_FLAG([-L$WIIU_WUPS/lib], [LIBS])
 
     # check for header and lib
-    AX_CHECK_LIBRARY([WIIU_WUPS_LIBWUPS],
-                     [wups.h],
-                     [wups],
-                     [AX_PREPEND_FLAG([-lwups], [LIBS])],
-                     [AC_MSG_ERROR([WUPS not found; get it from https://github.com/wiiu-env/WiiUPluginSystem])])
+    DEVKITPRO_CHECK_LIBRARY([wups.h],
+                            [wups],
+                            [],
+                            [],
+                            [AX_PREPEND_FLAG([-lwups], [LIBS])],
+                            [AC_MSG_ERROR([WUPS not found; get it from https://github.com/wiiu-env/WiiUPluginSystem])])
 
 
-    # custom Makefile rules for .wps plugins
+    # custom Makefile recipes for building .wps plugins
     AX_ADD_AM_MACRO([
 clean: clean-wps
 .PHONY: clean-wps

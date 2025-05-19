@@ -8,10 +8,11 @@
 # any medium without royalty provided the copyright notice and this notice are
 # preserved. This file is offered as-is, without any warranty.
 
-#serial 2
+#serial 3
 
 # DEVKITPRO_PPC_INIT
 # ------------------
+#
 # This macro adjuts the environment for PPC-based targets. It must be called before
 # `AM_INIT_AUTOMAKE', and before any cross-compilation tool is checked.
 #
@@ -40,13 +41,7 @@ AC_DEFUN([DEVKITPRO_PPC_INIT],[
 
     # See if we can find cross tools in PATH already; if not, append $DEVKITPPC/bin to
     # PATH
-    AC_MSG_CHECKING([if $DEVKITPPC/bin is in PATH])
-    AS_IF([! which powerpc-eabi-nm 1>/dev/null 2>/dev/null],
-          [
-              AC_MSG_RESULT([no, will append to PATH])
-              AS_VAR_APPEND([PATH], [:$DEVKITPPC/bin])
-          ],
-          [AC_MSG_RESULT([yes])])
+    DEVKITPRO_APPEND_TOOL_PATH([powerpc-eabi-nm], [$DEVKITPPC/bin])
 
     # Now check that DEVKITPPC/bin binaries are usable
     AS_IF([! which powerpc-eabi-nm 1>/dev/null 2>/dev/null],
@@ -61,6 +56,7 @@ AC_DEFUN([DEVKITPRO_PPC_INIT],[
 
 # DEVKITPRO_PPC_SETUP
 # -------------------
+#
 # This macro adjuts CPPFLAGS and LIBS to use portlibs libraries.
 # Call this after automake and tools check, to allow automake to set default
 # CFLAGS/CXXFLAGS.

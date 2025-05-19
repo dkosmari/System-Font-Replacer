@@ -8,13 +8,13 @@
 # any medium without royalty provided the copyright notice and this notice are
 # preserved. This file is offered as-is, without any warranty.
 
-#serial 5
+#serial 6
 
 # DEVKITPRO_WUT_INIT
 # ------------------
 #
 # This macro adjusts paths for Wii U homebrew, using WUT.
-# Call this before `AM_INIT_AUTOMAKE`.
+# Call this before `AM_INIT_AUTOMAKE`. It will call DEVKITPRO_PPC_INIT.
 #
 # Output variables:
 #   - `ELF2RPL': set to `elf2rpl' binary.
@@ -27,7 +27,7 @@ AC_DEFUN([DEVKITPRO_WUT_INIT],[
     DEVKITPRO_PPC_INIT
 
     # Ensure $DEVKITPRO/tools/bin is in PATH
-    DEVKITPRO_APPEND_PATH([elf2rpl], [$DEVKITPRO/tools/bin])
+    DEVKITPRO_APPEND_TOOL_PATH([elf2rpl], [$DEVKITPRO/tools/bin])
 
     AC_CHECK_PROGS([ELF2RPL], [elf2rpl])
     AC_CHECK_PROGS([WUHBTOOL], [wuhbtool])
@@ -39,7 +39,8 @@ AC_DEFUN([DEVKITPRO_WUT_INIT],[
 
     # Append portlibs/wiiu/bin and portlibs/ppc/bin to PATH
     # Note: we don't know if any portlibs package is installed or even needed.
-    AS_VAR_APPEND([PATH], [:$DEVKITPRO_PORTLIBS_WIIU/bin:$DEVKITPRO_PORTLIBS_PPC/bin])
+    DEVKITPRO_APPEND_PATH([$DEVKITPRO_PORTLIBS_WIIU/bin])
+    DEVKITPRO_APPEND_PATH([$DEVKITPRO_PORTLIBS_PPC/bin])
 
     # set WUT_ROOT
     AC_ARG_VAR([WUT_ROOT], [path to wut])
@@ -70,7 +71,7 @@ AC_DEFUN([DEVKITPRO_WUT_OPT_INIT],[
 # This macro adjusts compilation flags for Wii U homebrew, using WUT.
 #
 # Output variables:
-#   - `CFLAGS' 
+#   - `CFLAGS'
 #   - `CPPFLAGS'
 #   - `CXXFLAGS'
 #   - `LDFLAGS'
@@ -80,7 +81,7 @@ AC_DEFUN([DEVKITPRO_WUT_SETUP],[
 
     AS_VAR_SET_IF([WUT_ROOT], [], [AC_MSG_ERROR([WUT_ROOT not set.])])
 
-    AC_REQUIRE([DEVKITPRO_PPC_SETUP])
+    DEVKITPRO_PPC_SETUP
 
     AX_PREPEND_FLAG([-D__WIIU__],               [CPPFLAGS])
     AX_PREPEND_FLAG([-D__WUT__],                [CPPFLAGS])
@@ -96,19 +97,20 @@ AC_DEFUN([DEVKITPRO_WUT_SETUP],[
     AX_PREPEND_FLAG([-meabi],       [CXXFLAGS])
     AX_PREPEND_FLAG([-mhard-float], [CXXFLAGS])
 
-    AX_APPEND_FLAG([-L$WUT_ROOT/lib],                [LIBS])
-    AX_APPEND_FLAG([-L$WUT_ROOT/usr/lib],            [LIBS])
-    AX_APPEND_FLAG([-L$DEVKITPRO_PORTLIBS_WIIU/lib], [LIBS])
+    AX_PREPEND_FLAG([-L$DEVKITPRO_PORTLIBS_WIIU/lib], [LIBS])
+    AX_PREPEND_FLAG([-L$WUT_ROOT/usr/lib],            [LIBS])
+    AX_PREPEND_FLAG([-L$WUT_ROOT/lib],                [LIBS])
 
     AX_PREPEND_FLAG([-specs=$WUT_ROOT/share/wut.specs], [LDFLAGS])
 
-    AX_CHECK_LIBRARY([WUT],
-                     [wut.h],
-                     [wut],
-                     [AX_APPEND_FLAG([-lwut], [LIBS])],
-                     [AC_MSG_ERROR([wut not found in $DEVKITPRO; install the package with "dkp-pacman -S wut"])])
+    DEVKITPRO_CHECK_LIBRARY([wut.h],
+                            [wut],
+                            [],
+                            [],
+                            [AX_APPEND_FLAG([-lwut], [LIBS])],
+                            [AC_MSG_ERROR([wut not found in $DEVKITPRO; install the package with "dkp-pacman -S wut"])])
 
-    # custom Makefile rules for building RPX
+    # custom Makefile recipes for building RPX
     AX_ADD_AM_MACRO([
 clean: clean-rpx
 .PHONY: clean-rpx
@@ -123,11 +125,9 @@ AC_DEFUN([DEVKITPRO_WUT_SETUP_RPL],[
 
     AS_VAR_SET_IF([WUT_ROOT], [], [AC_MSG_ERROR([WUT_ROOT not defined.])])
 
-    AC_REQUIRE([DEVKITPRO_WUT_SETUP])
+    AX_PREPEND_FLAG([-specs=$WUT_ROOT/share/rpl.specs], [LDFLAGS])
 
-    AX_APPEND_FLAG([-specs=$WUT_ROOT/share/rpl.specs], [LDFLAGS])
-
-    # custom Makefile rules for building RPL
+    # custom Makefile recipes for building RPL
     AX_ADD_AM_MACRO([
 clean: clean-rpl
 .PHONY: clean-rpl
@@ -139,28 +139,26 @@ clean-rpl:; \$(RM) *.rpl
 
 
 
-# DEVKITPRO_WUT_CHECK_LIBMOCHA([ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
-# ----------------------------------------------------------------------
+# WIIU_WUT_CHECK_LIBMOCHA([ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
+# -----------------------------------------------------------------
 #
 # Checks for the presence of libmocha.
 #
 # Output variables:
-#   - `LIBS'
-#   - `HAVE_DEVKITPRO_WUT_LIBMOCHA'
+#   - `HAVE_WIIU_WUT_LIBMOCHA'
+#   - `WIIU_WUT_LIBMOCHA_LIBS'
 
-AC_DEFUN([DEVKITPRO_WUT_CHECK_LIBMOCHA],[
+AC_DEFUN([WIIU_WUT_CHECK_LIBMOCHA],[
 
-    AC_REQUIRE([DEVKITPRO_WUT_SETUP])
+    AS_VAR_SET_IF([WUT_ROOT], [], [AC_MSG_ERROR([WUT_ROOT not set.])])
 
-    AX_CHECK_LIBRARY([DEVKITPRO_WUT_LIBMOCHA],
-                     [mocha/mocha.h],
-                     [mocha],
-                     [
-                         AX_PREPEND_FLAG([-lmocha], [LIBS])
-                         $1
-                     ],
-                     m4_default([$2],
-                                [AC_MSG_ERROR([libmocha not found; get it from https://github.com/wiiu-env/libmocha])]))
+    DEVKITPRO_CHECK_LIBRARY_FULL([WIIU_WUT_LIBMOCHA],
+                                 [mocha/mocha.h],
+                                 [mocha],
+                                 [],
+                                 [],
+                                 [$1],
+                                 m4_default([$2],
+                                            [AC_MSG_ERROR([libmocha not found; get it from https://github.com/wiiu-env/libmocha])]))
 
-    
-])dnl DEVKITPRO_WUT_CHECK_LIBMOCHA
+])dnl WIIU_WUT_CHECK_LIBMOCHA
