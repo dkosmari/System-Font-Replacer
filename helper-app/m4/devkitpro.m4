@@ -2,13 +2,13 @@
 # devkitpro.m4 - Macros to handle devkitPro setup.
 # URL: https://github.com/dkosmari/devkitpro-autoconf/
 
-# Copyright (c) 2025 Daniel K. O. <dkosmari>
+# Copyright (c) 2025-2026 Daniel K. O. <dkosmari>
 #
 # Copying and distribution of this file, with or without modification, are permitted in
 # any medium without royalty provided the copyright notice and this notice are
 # preserved. This file is offered as-is, without any warranty.
 
-#serial 4
+#serial 5
 
 # DEVKITPRO_INIT
 # --------------
@@ -19,6 +19,7 @@
 # Output variables:
 #   - `DEVKITPRO': path to devkitPro.
 #   - `DEVKITPRO_PORTLIBS': path to portlibs.
+#   - `PATH': appended to locate the necessary tools.
 #
 # The file `aminclude.am` is generated with extra Makefile rules:
 #   - Add `@INC_AMINCLUDE@` to the Makefile that needs them.
@@ -47,21 +48,19 @@ AC_DEFUN([DEVKITPRO_INIT], [
     AC_BEFORE([$0], [AC_PATH_TOOL])
     AC_BEFORE([$0], [PKG_PROG_PKG_CONFIG])
 
-    AC_ARG_VAR([DEVKITPRO], [path to devkitPro])
+    AC_ARG_VAR([DEVKITPRO], [where devkitPro is installed])
 
     # --with-devkitpro can override DEVKITPRO variable
     AC_ARG_WITH([devkitpro],
                 [AS_HELP_STRING([--with-devkitpro=PATH-TO-DEVKITPRO],
                                 [Set the base path to devkitPro. This overrides the variable DEVKITPRO])],
-                [AS_VAR_SET([DEVKITPRO], [$withval])])
+                [AS_VAR_SET([DEVKITPRO], [${withval}])])
 
     # check if DEVKITPRO is set
     AC_MSG_CHECKING([devkitPro path])
 
     AS_VAR_SET_IF([DEVKITPRO],
-                  [
-                      AC_MSG_RESULT([$DEVKITPRO])
-                  ],
+                  [AC_MSG_RESULT([${DEVKITPRO}])],
                   [
                       AC_MSG_RESULT([not found])
                       AC_MSG_ERROR([need --with-devkitpro=PATH-TO-DEVKITPRO or DEVKITPRO=PATH-TO-DEVKITPRO])
@@ -69,65 +68,114 @@ AC_DEFUN([DEVKITPRO_INIT], [
 
     AC_SUBST([DEVKITPRO])
 
+    # mark DEVKITPRO_HOST as precious and output
+    AC_ARG_VAR([DEVKITPRO_HOST], [the host prefix for cross-compilation tools])
+    AC_SUBST([DEVKITPRO_HOST])
+
     # set DEVKITPRO_PORTLIBS
-    AC_ARG_VAR([DEVKITPRO_PORTLIBS], [path to portlibs])
-    AS_VAR_SET([DEVKITPRO_PORTLIBS], [$DEVKITPRO/portlibs])
+    AC_ARG_VAR([DEVKITPRO_PORTLIBS], [base path to portlibs])
+    AS_VAR_SET_IF([DEVKITPRO_PORTLIBS],
+                  [],
+                  [AS_VAR_SET([DEVKITPRO_PORTLIBS], [${DEVKITPRO}/portlibs])])
+    
     AC_SUBST([DEVKITPRO_PORTLIBS])
+
+    m4_pattern_allow([AM_V_at])
 
     # custom Makefile recipes
     AX_ADD_AM_MACRO([
+
 clean: clean-strip-elf
+
 .PHONY: clean-strip-elf
-clean-strip-elf:; \$(RM) *.strip.elf
-%.strip.elf: %.elf; \$(STRIP) -g \$< -o \$[@]
+
+clean-strip-elf:
+	\$([AM_V_at])\$(RM) *.strip.elf
+
+%.strip.elf: %.elf
+	\$([AM_V_at])\$(STRIP) -g \$< -o \$[@]
+
 ])
 
     # make updated PATH visible to Makefiles
-    AC_ARG_VAR([PATH])
+    AC_ARG_VAR([PATH], [the usual PATH variable])
     AC_SUBST([PATH])
 
 ])dnl DEVKITPRO_INIT
 
 
-# DEVKITPRO_APPEND_PATH(SEARCH-PATH)
+# DEVKITPRO_PATH_APPEND(SEARCH-PATH)
 # ----------------------------------
 #
-# Appends SEARCH-PATH to PATH if it's not there already.
+# Appends `SEARCH-PATH' to `DEVKITPRO_PATH' if it's not in `PATH' already.
 #
 # Output variables:
-#   - `PATH'
+#   - `DEVKITPRO_PATH'
 
-AC_DEFUN([DEVKITPRO_APPEND_PATH], [
+AC_DEFUN([DEVKITPRO_PATH_APPEND], [
 
     if @<:@@<:@ ":@S|@PATH:" != *":$1:"* @:>@@:>@
     then
-          AS_VAR_APPEND([PATH], [":$1"])
-    else
-          AC_MSG_RESULT([yes])
+        AS_VAR_SET_IF([DEVKITPRO_PATH],
+                      [
+                          AS_VAR_SET([DEVKITPRO_PATH], ["${DEVKITPRO_PATH}:$1"])
+                      ],
+                      [
+                          AS_VAR_SET([DEVKITPRO_PATH], ["$1"])
+                      ])
     fi
 
-])dnl DEVKITPRO_APPEND_PATH
+])dnl DEVKITPRO_PATH_APPEND
+
+
+# DEVKITPRO_PATH_PREPEND(SEARCH-PATH)
+# -----------------------------------
+#
+# Prepends `SEARCH-PATH' to `DEVKITPRO_PATH' if it's not in `PATH' already.
+#
+# Output variables:
+#   - `DEVKITPRO_PATH'
+
+AC_DEFUN([DEVKITPRO_PATH_PREPEND], [
+
+    if @<:@@<:@ ":@S|@PATH:" != *":$1:"* @:>@@:>@
+    then
+        AS_VAR_SET_IF([DEVKITPRO_PATH],
+                      [
+                          AS_VAR_SET([DEVKITPRO_PATH], ["$1:${DEVKITPRO_PATH}"])
+                      ],
+                      [
+                          AS_VAR_SET([DEVKITPRO_PATH], ["$1"])
+                      ])
+    fi
+
+])dnl DEVKITPRO_PATH_PREPEND
 
 
 # DEVKITPRO_APPEND_TOOL_PATH(EXECUTABLE, SEARCH-PATH)
 # ---------------------------------------------------
 #
-# This macro checks if an executable is found in PATH; if not, appends SEARCH-PATH to PATH.
+# This macro checks if an executable is found in `PATH' or `DEVKITPRO_PATH'; if not,
+# appends `SEARCH-PATH' to `DEVKITPRO_PATH'.
 #
 # Output variables:
-#   - `PATH'
+#   - `DEVKITPRO_PATH'
 
 AC_DEFUN([DEVKITPRO_APPEND_TOOL_PATH], [
     AC_MSG_CHECKING([if $2 is in PATH])
+    AX_VAR_PUSHVALUE([PATH], [${PATH}:${DEVKITPRO_PATH}])
     AS_IF([! which $1 1>/dev/null 2>/dev/null],
           [
-              AC_MSG_RESULT([no, will append $2 to PATH])
-              DEVKITPRO_APPEND_PATH([$2])
+              AC_MSG_RESULT([no, will append $2])
+              DEVKITPRO_PATH_APPEND([$2])
               # Test if it's usable.
+              AX_VAR_PUSHVALUE([PATH], [${PATH}:${DEVKITPRO_PATH}])
               AS_IF([! which $1 1>/dev/null 2>/dev/null],
-                    [AC_MSG_ERROR([could not execute $1])])
+                    [AC_MSG_ERROR([could not find $1 in $2])])
+              AX_VAR_POPVALUE([PATH])
           ],
           [AC_MSG_RESULT([yes])])
+    AX_VAR_POPVALUE([PATH])
 ])dnl DEVKITPRO_APPEND_TOOL_PATH
 
 
@@ -143,8 +191,8 @@ AC_DEFUN([DEVKITPRO_APPEND_TOOL_PATH], [
 
 AC_DEFUN([DEVKITPRO_CHECK_LIBRARY], [
 
-    AX_VAR_PUSHVALUE([CPPFLAGS], [$CPPFLAGS $3])
-    AX_VAR_PUSHVALUE([LDFLAGS], [$LDFLAGS $4])
+    AX_VAR_PUSHVALUE([CPPFLAGS], [${CPPFLAGS} $3])
+    AX_VAR_PUSHVALUE([LDFLAGS], [${LDFLAGS} $4])
 
     AC_CHECK_HEADER([$1],
                     [
@@ -213,5 +261,3 @@ AC_DEFUN([DEVKITPRO_CHECK_LIBRARY_FULL], [
           [$7])
 
 ])dnl DEVKITPRO_CHECK_LIBRARY_FULL
-
-

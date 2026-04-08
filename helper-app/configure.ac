@@ -1,9 +1,9 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.69])
+AC_PREREQ([2.71])
 AC_INIT([System Font Replacer Helper],
-        [1.2],
+        [1.2+],
         [https://github.com/dkosmari/System-Font-Replacer/issues],
         [],
         [https://github.com/dkosmari/System-Font-Replacer])
@@ -12,6 +12,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([build-aux])
 
+AC_CANONICAL_HOST
 
 DEVKITPRO_WUT_INIT
 
@@ -22,8 +23,7 @@ AX_APPEND_COMPILE_FLAGS([-std=c++23], [CXX])
 AC_LANG([C++])
 
 DEVKITPRO_WUT_SETUP
-WIIU_WUT_CHECK_LIBMOCHA
-
+WIIU_ENV_SETUP_LIBMOCHA([external/libmocha])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

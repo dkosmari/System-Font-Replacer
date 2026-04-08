@@ -1,4 +1,20 @@
-#!/bin/sh -x
-(cd external/libwupsxx && ./bootstrap "$@")
-(cd helper-app && ./bootstrap "$@")
+#!/bin/bash
+
+GREEN=$(tput setaf 10)
+YELLOW=$(tput setaf 11)
+NONE=$(tput sgr0)
+
+
+recurse_bootstrap()
+{
+    echo "[${GREEN}${PWD}${NONE}] Running '${YELLOW}./bootstrap${NONE} ${@:2}' in '$1'"
+    (cd "$1"  && ./bootstrap "${@:2}") || exit 1
+}
+
+
+recurse_bootstrap external/libwupsxx
+recurse_bootstrap helper-app
+
+
+echo "[${GREEN}${PWD}${NONE}] Running '${YELLOW}autoreconf --install $@${NONE}'"
 exec autoreconf --install "$@"

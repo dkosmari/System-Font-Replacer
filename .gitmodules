@@ -1,3 +1,6 @@
 [submodule "external/libwupsxx"]
 	path = external/libwupsxx
 	url = https://github.com/dkosmari/libwupsxx.git
+[submodule "helper-app/external/libmocha"]
+	path = helper-app/external/libmocha
+	url = https://github.com/wiiu-env/libmocha.git

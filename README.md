@@ -123,3 +123,26 @@ them.
 
 Simply put your `.bps` patches in `SD:/wiiu/fonts/`, and run the Helper app. It will then
 automatically convert all `.bps` patches in that folder into `.ttf` fonts.
+
+
+## Building
+
+This project uses submodules, so make sure you clone the source with submodules.
+
+ - with Mercurial: `hg clone https://github.com/dkosmari/System-Font-Replacer.git`
+
+ - with git: `git clone https://github.com/dkosmari/System-Font-Replacer.git --recurse-submodules`
+
+
+### Build steps:
+
+If you obtained the source from a release tarball, you can skip step 0.
+
+0. `./bootstrap`
+
+1. `./configure --host=powerpc-eabi CXXFLAGS="-Os -ffunction-sections -fdata-sections"`
+
+2. `make`
+
+After this, you can copy the `.wps` file into the Aroma plugins folder manually, or type
+`make wiiu-install`.

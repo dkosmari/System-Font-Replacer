@@ -1,9 +1,9 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.69])
+AC_PREREQ([2.71])
 AC_INIT([System Font Replacer],
-        [1.2],
+        [1.2+],
         [https://github.com/dkosmari/System-Font-Replacer/issues],
         [],
         [https://github.com/dkosmari/System-Font-Replacer])
@@ -12,15 +12,20 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([build-aux])
 
-WIIU_WUPS_INIT
+AC_CANONICAL_HOST
+
+DEVKITPRO_WUT_INIT
 
 AM_INIT_AUTOMAKE([foreign subdir-objects])
+
+LT_INIT([disable-shared])
 
 AC_PROG_CXX
 AX_APPEND_COMPILE_FLAGS([-std=c++23], [CXX])
 AC_LANG([C++])
 
-WIIU_WUPS_SETUP
+DEVKITPRO_WUT_SETUP
+WIIU_ENV_SETUP_WUPS([external/libwupsxx/external/WiiUPluginSystem])
 
 AC_CONFIG_FILES([Makefile])
 

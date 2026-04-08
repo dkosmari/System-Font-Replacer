@@ -1,6 +1,8 @@
 syntax: glob
 
 *.elf
+*.la
+*.lo
 *.o
 *.rpx
 *.tar.gz
@@ -20,6 +22,8 @@ config.log
 config.status
 configure
 fonts
+libtool
 Makefile
 Makefile.in
 stamp-h1
+screenshots

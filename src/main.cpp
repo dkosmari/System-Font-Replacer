@@ -1,7 +1,7 @@
 /*
  * System Font Replacer - A plugin to temporarily replace the Wii U's system font.
  *
- * Copyright (C) 2025  Daniel K. O.
+ * Copyright (C) 2025-2026  Daniel K. O.
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -114,18 +114,25 @@ menu_open(wups::category& root)
 {
     logger::guard guard;
 
-    const std::vector<std::string> dot_ttf{".ttf"};
-
     using wups::make_item;
     root.add(make_item("NOTE"s, "Restart the app/game for the font to change."s, 60));
 
-    root.add(make_item(cfg::enabled, "yes", "no"));
-    root.add(make_item(cfg::only_menu, "yes", "no"));
+    wups::bool_item::specs bool_opts;
+    bool_opts.true_label = "yes";
+    bool_opts.false_label = "no";
+    root.add(make_item(cfg::enabled, bool_opts));
+    root.add(make_item(cfg::only_menu, bool_opts));
 
-    root.add(make_item(cfg::path_std, 40, dot_ttf));
-    root.add(make_item(cfg::path_cn, 40, dot_ttf));
-    root.add(make_item(cfg::path_kr, 40, dot_ttf));
-    root.add(make_item(cfg::path_tw, 40, dot_ttf));
+    using wups::file_item;
+    file_item::specs file_opts;
+    file_opts.extensions = {".ttf"};
+    file_opts.valid = file_item::type::regular;
+    file_opts.max_width = 40;
+    std::filesystem::path fonts_path = "fs:/vol/external01/wiiu/fonts";
+    root.add(make_item(cfg::path_std, fonts_path, file_opts));
+    root.add(make_item(cfg::path_cn,  fonts_path, file_opts));
+    root.add(make_item(cfg::path_kr,  fonts_path, file_opts));
+    root.add(make_item(cfg::path_tw,  fonts_path, file_opts));
 
     root.add(make_item("Website"s, std::string(PACKAGE_URL)));
 }

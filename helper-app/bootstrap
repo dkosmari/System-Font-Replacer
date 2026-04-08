@@ -1,2 +1,8 @@
-#!/bin/sh -x
+#!/bin/bash
+
+GREEN=$(tput setaf 10)
+YELLOW=$(tput setaf 11)
+NONE=$(tput sgr0)
+
+echo "[${GREEN}${PWD}${NONE}] Running '${YELLOW}autoreconf --install $@${NONE}'"
 exec autoreconf --install "$@"
