@@ -63,16 +63,16 @@ namespace cfg {
                   bool, only_menu, true);
 
     WUPSXX_OPTION("Std Font",
-                  path, path_std, "fs:/vol/external01/wiiu/fonts");
+                  path, path_std, "");
 
     WUPSXX_OPTION("Cn Font",
-                  path, path_cn, "fs:/vol/external01/wiiu/fonts");
+                  path, path_cn, "");
 
     WUPSXX_OPTION("Kr Font",
-                  path, path_kr, "fs:/vol/external01/wiiu/fonts");
+                  path, path_kr, "");
 
     WUPSXX_OPTION("Tw Font",
-                  path, path_tw, "fs:/vol/external01/wiiu/fonts");
+                  path, path_tw, "");
 
 
     std::vector<wups::option_base*> all_options{
@@ -142,6 +142,25 @@ void
 menu_close()
 {
     logger::guard guard;
+
+    // libwupsxx changes: if the font selected isn't a regular file, just clear it
+
+    if (!cfg::path_std.value.empty()
+        && (!exists(cfg::path_std.value) || !is_regular_file(cfg::path_std.value)))
+        cfg::path_std.value.clear();
+
+    if (!cfg::path_cn.value.empty()
+        && (!exists(cfg::path_cn.value) || !is_regular_file(cfg::path_cn.value)))
+        cfg::path_cn.value.clear();
+
+    if (!cfg::path_kr.value.empty()
+        && (!exists(cfg::path_kr.value) || !is_regular_file(cfg::path_kr.value)))
+        cfg::path_kr.value.clear();
+
+    if (!cfg::path_tw.value.empty()
+        && (!exists(cfg::path_tw.value) || !is_regular_file(cfg::path_tw.value)))
+        cfg::path_tw.value.clear();
+
     cfg::save();
 }
 
@@ -242,7 +261,7 @@ try_load_font(const path& font_path)
     FILE* f = nullptr;
     try {
         // silently exits if file doesn't exist, or is not a file
-        if (!exists(font_path) || !is_regular_file(font_path))
+        if (font_path.empty() || !exists(font_path) || !is_regular_file(font_path))
             return {};
 
         auto size = file_size(font_path);

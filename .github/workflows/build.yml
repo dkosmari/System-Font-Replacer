@@ -14,13 +14,13 @@ jobs:
         submodules: recursive
 
     - name: Setup Docker
-      run: docker build --tag plugin-builder-image .
+      run: docker build --tag plugin-image .
 
     - name: Build
       uses: addnab/docker-run-action@v3
       with:
-        image: plugin-builder-image
-        options: --name plugin-builder-container
+        image: plugin-image
+        options: --name plugin-container
         run: |
           ./bootstrap
           ./configure --host=powerpc-eabi CXXFLAGS="-Os -ffunction-sections -fdata-sections"
@@ -29,14 +29,14 @@ jobs:
     - name: Copy plugin to host
       uses: tj-actions/docker-cp@v2
       with:
-        container: plugin-builder-container
+        container: plugin-container
         source: /project/system-font-replacer.wps
         destination: system-font-replacer.wps
 
     - name: Copy helper app to host
       uses: tj-actions/docker-cp@v2
       with:
-        container: plugin-builder-container
+        container: plugin-container
         source: /project/helper-app/system-font-replacer-helper.wuhb
         destination: system-font-replacer-helper.wuhb
 
