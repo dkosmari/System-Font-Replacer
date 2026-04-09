@@ -1,8 +1,3 @@
-SUBDIRS = \
-	external/libwupsxx \
-	helper-app
-
-
 EXTRA_DIST = \
 	assets \
 	AUTHORS \
@@ -13,6 +8,11 @@ EXTRA_DIST = \
 	Dockerfile \
 	merge-fonts.py \
 	README.md
+
+
+SUBDIRS = \
+	external/libwupsxx \
+	helper-app
 
 
 AM_CPPFLAGS = \
@@ -44,7 +44,7 @@ all-local: $(WPS_FILE)
 
 
 run: $(WPS_FILE)
-	WIILOAD=tcp:wiiu wiiload $(WPS_FILE)
+	WIILOAD=tcp:wiiu wiiload $<
 
 
 wiiu-install: $(WPS_FILE)
