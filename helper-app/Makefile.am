@@ -8,7 +8,7 @@ EXTRA_DIST = \
 
 SUBDIRS = external/libmocha
 
-DIST_SUBDIRS =
+DIST_SUBDIRS = external
 
 
 AM_CXXFLAGS = -Wall -Wextra -Werror
@@ -17,11 +17,11 @@ AM_CPPFLAGS = $(LIBMOCHA_CPPFLAGS)
 
 LDADD = $(LIBMOCHA_LIB)
 
+
 ELF_FILE = system-font-replacer-helper.elf
-
 RPX_FILE  = $(ELF_FILE:.elf=.rpx)
-
 WUHB_FILE = $(ELF_FILE:.elf=.wuhb)
+
 
 CLEANFILES = $(WUHB_FILE) $(RPX_FILE)
 

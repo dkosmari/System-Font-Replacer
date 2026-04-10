@@ -16,7 +16,7 @@ AC_CANONICAL_HOST
 
 DEVKITPRO_WUT_INIT
 
-AM_INIT_AUTOMAKE([foreign subdir-objects])
+AM_INIT_AUTOMAKE([foreign subdir-objects tar-pax])
 
 AC_PROG_CXX
 AX_APPEND_COMPILE_FLAGS([-std=c++23], [CXX])
@@ -25,6 +25,7 @@ AC_LANG([C++])
 DEVKITPRO_WUT_SETUP
 WIIU_ENV_SETUP_LIBMOCHA([external/libmocha])
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile
+                 external/Makefile])
 AC_OUTPUT
 
