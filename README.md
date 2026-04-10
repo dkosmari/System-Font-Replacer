@@ -140,7 +140,7 @@ If you obtained the source from a release tarball, you can skip step 0.
 
 0. `./bootstrap`
 
-1. `./configure --host=powerpc-eabi CXXFLAGS="-Os -ffunction-sections -fdata-sections"`
+1. `./configure --host=powerpc-eabi CXXFLAGS="-Os -ffunction-sections -fdata-sections -fipa-pta"`
 
 2. `make`
 
