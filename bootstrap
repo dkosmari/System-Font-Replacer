@@ -5,21 +5,12 @@ YELLOW=$(tput setaf 11)
 NONE=$(tput sgr0)
 
 
-update_submodule()
-{
-    echo "[${GREEN}${PWD}${NONE}] Running '${YELLOW}git submodule update --recursive${NONE}' in '$1'"
-    (cd "$1" && git submodule update --recursive) || exit 1
-}
-
-
 recurse_bootstrap()
 {
     echo "[${GREEN}${PWD}${NONE}] Running '${YELLOW}./bootstrap${NONE} ${@:2}' in '$1'"
     (cd "$1"  && ./bootstrap "${@:2}") || exit 1
 }
 
-
-update_submodule external/libwupsxx
 
 recurse_bootstrap external/libwupsxx
 recurse_bootstrap helper-app

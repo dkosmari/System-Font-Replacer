@@ -127,16 +127,12 @@ automatically convert all `.bps` patches in that folder into `.ttf` fonts.
 
 ## Building
 
-This project uses submodules, so make sure you clone the source with submodules.
-
- - with Mercurial: `hg clone https://github.com/dkosmari/System-Font-Replacer.git`
-
- - with git: `git clone https://github.com/dkosmari/System-Font-Replacer.git --recurse-submodules`
-
-
 ### Build steps:
 
-If you obtained the source from a release tarball, you can skip step 0.
+- If you cloned the repository with git, you should use the `--recurse-submodules` option;
+there's also the `external/update-submodules.sh` that will update them manually.
+
+- If you obtained the source from a release tarball, you can skip step 0.
 
 0. `./bootstrap`
 

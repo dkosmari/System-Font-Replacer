@@ -16,7 +16,7 @@ AC_CANONICAL_HOST
 
 DEVKITPRO_WUT_INIT
 
-AM_INIT_AUTOMAKE([foreign subdir-objects])
+AM_INIT_AUTOMAKE([foreign subdir-objects tar-pax])
 
 LT_INIT([disable-shared])
 
@@ -27,9 +27,8 @@ AC_LANG([C++])
 DEVKITPRO_WUT_SETUP
 WIIU_ENV_SETUP_WUPS([external/libwupsxx/external/WiiUPluginSystem])
 
-AC_CONFIG_FILES([Makefile])
-
 AX_SUBDIRS_CONFIGURE([external/libwupsxx])
 AX_SUBDIRS_CONFIGURE([helper-app])
 
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

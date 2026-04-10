@@ -6,6 +6,7 @@ EXTRA_DIST = \
 	COPYING \
 	docker-build.sh \
 	Dockerfile \
+	external/update-submodules.sh \
 	merge-fonts.py \
 	README.md
 
@@ -13,6 +14,10 @@ EXTRA_DIST = \
 SUBDIRS = \
 	external/libwupsxx \
 	helper-app
+
+
+external/libwupsxx/lib/libwupsxx.la:
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C external/libwupsxx V=$V
 
 
 AM_CPPFLAGS = \
