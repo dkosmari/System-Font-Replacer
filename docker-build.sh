@@ -24,7 +24,7 @@ trap cleanup INT TERM
 docker build --tag $IMAGE . || cleanup 1
 
 ARGS="--tty --interactive --name $CONTAINER $IMAGE"
-docker run $ARGS sh -c "./bootstrap && ./configure --host=powerpc-eabi CXXFLAGS='-Os -ffunction-sections -fipa-pta -flto -Wno-odr' AR=powerpc-eabi-gcc-ar RANLIB=powerpc-eabi-gcc-ranlib && make" || cleanup 2
+docker run $ARGS sh -c "./bootstrap && ./configure --host=powerpc-eabi CXXFLAGS='-Os -ffunction-sections -fdata-sections -fipa-pta -flto -Wno-odr' AR=powerpc-eabi-gcc-ar RANLIB=powerpc-eabi-gcc-ranlib && make" || cleanup 2
 echo "Compilation finished."
 
 # Copy the wps file out.
