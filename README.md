@@ -16,31 +16,23 @@ anything in your NAND.
 
 ## Usage
 
-The plugin can load TrueType fonts from anywhere in the SD card, but it's a good idea to have
-them in `SD:/wiiu/fonts/`; that's the default location the plugin looks for fonts.
+The plugin will load TrueType (`.ttf`) fonts from `SD:/wiiu/fonts/`.
 
 1. Open up the WUPS menu (**L + DOWN + SELECT**) and enter the **System Font Replacer**
    menu.
 
-2. Ensure the "Enabled" option is set to "*yes*", otherwise the plugin won't do anything.
+2. Ensure the "**Enabled**" option is set to "*yes*", otherwise the plugin won't do anything.
 
-3. Select the "Std Font" option, and press **A** to start editing it:
+3. Select the "**Std Font**" option, and press **A** to start editing it:
 
-   - Press **→** to enter a folder;
-   - Press **←** to leave a folder;
-   - Press **↑** or **↓** to change the file;
-   - Press **X** to reset back to the default value (`SD:/wiiu/fonts/`);
+   - Press **←** or **→** to cycle through the fonts in `SD:/wiiu/fonts/`.
+   - Press **X** to reset back to the default value (empty, no font).
    - Press **A** to confirm, or **B** to cancel the change.
-
-   Use it to navigate to the desired `.ttf` font you want to use, then press **A** to
-   confirm it.
-
-   > Note that, if you select a directory (like the default, `SD:/wiiu/fonts`) the font will
-   > not be replaced, and the original system font is used instead.
    
    > **Std** font is used for Western and Japanese text. Use the **Cn**, **Kr** or **Tw**
    > options if you want to replace the Simplified Chinese, Korean, or Traditional Chinese
-   > fonts.
+   > fonts. Most official games and apps do not use these fonts, so there almost no reason
+   > to replace them.
 
 4. Exit the plugin menu.
 

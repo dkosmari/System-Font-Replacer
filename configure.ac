@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.71])
 AC_INIT([System Font Replacer],
-        [1.2+],
+        [1.3],
         [https://github.com/dkosmari/System-Font-Replacer/issues],
         [],
         [https://github.com/dkosmari/System-Font-Replacer])
